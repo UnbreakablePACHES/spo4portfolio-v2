@@ -47,7 +47,7 @@ def train(config_path: str = "configs/spo_plus_linear.yaml"):
     # 3. 设备 & 随机种子
     # ================================
     device = torch.device(cfg["trainer"].get("device", "cpu"))
-    seed = cfg["experiment"].get("seed", 42)
+    seed = cfg["experiment"].get("seed", 123)
     set_seed(seed)
 
     logger.log(f"Device: {device}")

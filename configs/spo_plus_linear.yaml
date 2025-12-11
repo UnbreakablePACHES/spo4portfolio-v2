@@ -1,6 +1,6 @@
 experiment:
   name: "spo_plus_linear_test"
-  seed: 42
+  seed: 123
 
 data:
   root: "data/FeatureData"     # 和 build_dataset 的 data_dir 保持一致
