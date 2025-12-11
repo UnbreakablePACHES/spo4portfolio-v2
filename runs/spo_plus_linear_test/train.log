@@ -1,0 +1,38 @@
+[2025-12-11 17:13:09] Experiment: spo_plus_linear_test
+[2025-12-11 17:13:09] Device: cpu
+[2025-12-11 17:13:09] Seed: 42
+[2025-12-11 17:13:09] Dataloader built.
+[2025-12-11 17:13:09] Model built.
+[2025-12-11 17:13:09] Portfolio model built.
+[2025-12-11 17:13:11] Loss + Optimizer built.
+[2025-12-11 17:13:11] Epoch 1/10 | avg_loss=101.173055 | avg_regret=-22.468095
+[2025-12-11 17:13:11] Epoch 2/10 | avg_loss=85.237791 | avg_regret=-17.653383
+[2025-12-11 17:13:11] Epoch 3/10 | avg_loss=72.932282 | avg_regret=-11.542130
+[2025-12-11 17:13:11] Epoch 4/10 | avg_loss=66.222209 | avg_regret=-9.580014
+[2025-12-11 17:13:11] Epoch 5/10 | avg_loss=57.294219 | avg_regret=-4.514719
+[2025-12-11 17:13:11] Epoch 6/10 | avg_loss=49.686322 | avg_regret=-1.350687
+[2025-12-11 17:13:11] Epoch 7/10 | avg_loss=41.768866 | avg_regret=4.787954
+[2025-12-11 17:13:11] Epoch 8/10 | avg_loss=33.069005 | avg_regret=5.919417
+[2025-12-11 17:13:11] Epoch 9/10 | avg_loss=24.718018 | avg_regret=10.729181
+[2025-12-11 17:13:11] Epoch 10/10 | avg_loss=16.200479 | avg_regret=14.506532
+[2025-12-11 17:13:11] Training finished. Model saved to: runs\spo_plus_linear_test\model_final.pt
+[2025-12-11 17:13:11] Plots saved (loss, regret).
+[2025-12-11 17:19:07] Experiment: spo_plus_linear_test
+[2025-12-11 17:19:07] Device: cpu
+[2025-12-11 17:19:07] Seed: 42
+[2025-12-11 17:19:07] Dataloader built.
+[2025-12-11 17:19:07] Model built.
+[2025-12-11 17:19:07] Portfolio model built.
+[2025-12-11 17:19:08] Loss + Optimizer built.
+[2025-12-11 17:19:08] Epoch 1/10 | avg_loss=111.622378 | avg_regret=-22.474578
+[2025-12-11 17:19:08] Epoch 2/10 | avg_loss=94.530444 | avg_regret=-17.773264
+[2025-12-11 17:19:08] Epoch 3/10 | avg_loss=82.998989 | avg_regret=-10.987354
+[2025-12-11 17:19:08] Epoch 4/10 | avg_loss=73.643723 | avg_regret=-8.221712
+[2025-12-11 17:19:08] Epoch 5/10 | avg_loss=64.133669 | avg_regret=-2.891301
+[2025-12-11 17:19:08] Epoch 6/10 | avg_loss=53.954512 | avg_regret=1.268861
+[2025-12-11 17:19:08] Epoch 7/10 | avg_loss=43.380524 | avg_regret=7.772463
+[2025-12-11 17:19:08] Epoch 8/10 | avg_loss=33.423723 | avg_regret=9.534229
+[2025-12-11 17:19:08] Epoch 9/10 | avg_loss=23.089864 | avg_regret=15.147111
+[2025-12-11 17:19:08] Epoch 10/10 | avg_loss=12.985928 | avg_regret=19.759886
+[2025-12-11 17:19:08] Training finished. Model saved to: runs\spo_plus_linear_test\model_final.pt
+[2025-12-11 17:19:08] Plots saved (loss, regret).
