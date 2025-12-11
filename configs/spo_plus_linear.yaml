@@ -13,23 +13,22 @@ data:
     - MACD_diff
     - bollinger_width
     - volume_bias
-  train_start: "2023-01-01"
-  train_end: "2023-12-31"
 
 dataloader:
   type: "monthly_window"
   params:
-    batch_size: 32
+    batch_size: 63
     shuffle: true
-    window: 20
+    window: 21
 
 model:
   type: "linear"
+  params:
+    input_dim: 7          # 特征数量
 
 portfolio:
   type: "basic"
   params:
-    num_assets: 4
     budget: 1.0
     lb: 0.0
     ub: 1.0
@@ -44,7 +43,7 @@ optimizer:
     weight_decay: 0.0
 
 trainer:
-  epochs: 10
+  epochs: 30
   device: "cpu"   
 
 backtest:

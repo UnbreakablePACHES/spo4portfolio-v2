@@ -14,7 +14,7 @@ def build_model(cfg):
 
     if mtype == "linear":
         return LinearInferencer(
-            num_assets=params["num_assets"],
+            num_assets=len(cfg["data"]["etfs"]),
             input_dim=params["input_dim"],
         )
 
@@ -25,5 +25,5 @@ def build_model(cfg):
     # elif mtype == "transformer":
     #     return TransformerInferencer(**params)
 
-    else:
+    else:  
         raise ValueError(f"Unknown model type: {mtype}")
