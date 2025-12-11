@@ -1,0 +1,51 @@
+experiment:
+  name: "spo_plus_linear_test"
+  seed: 42
+
+data:
+  root: "data/FeatureData"     # 和 build_dataset 的 data_dir 保持一致
+  etfs: ["EEM", "EFA", "JPXN", "SPY"]   # 你现在先用 4 个 ETF
+  features:
+    - log_return_input
+    - SMA_10
+    - price_bias
+    - RSI_14
+    - MACD_diff
+    - bollinger_width
+    - volume_bias
+  train_start: "2023-01-01"
+  train_end: "2023-12-31"
+
+dataloader:
+  type: "monthly_window"
+  params:
+    batch_size: 32
+    shuffle: true
+    window: 20
+
+model:
+  type: "linear"
+  params:
+    num_assets: 4         # 和上面 etfs 数量一致
+    input_dim: 7          # 每个资产 7 个特征
+
+portfolio:
+  type: "basic"
+  params:
+    num_assets: 4
+    budget: 1.0
+    lb: 0.0
+    ub: 1.0
+
+loss:
+  type: "spo_plus"
+
+optimizer:
+  type: "adam"
+  params:
+    lr: 0.001
+    weight_decay: 0.0
+
+trainer:
+  epochs: 10
+  device: "cpu"    # 先用 cpu 跑通，有显卡再改成 cuda
