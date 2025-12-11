@@ -1,5 +1,5 @@
 experiment:
-  name: "spo_plus_linear_test"
+  name: "LinearSPO+"
   seed: 123
 
 data:

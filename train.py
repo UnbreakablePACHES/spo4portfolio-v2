@@ -13,7 +13,7 @@ from optimizers.factory import build_optimizer
 from utils.logging import Logger
 from utils.recorders import LossRecorder, WeightRecorder, RegretRecorder
 from utils.plotting import plot_curve
-
+from datetime import datetime
 
 # =========== 全局 Seed 控制（确保可复现） ===========
 def set_seed(seed):
@@ -28,24 +28,26 @@ def set_seed(seed):
 def train(config_path: str = "configs/spo_plus_linear.yaml"):
 
     # ================================
-    # 1. 加载 config
+    # 加载 config
     # ================================
     with open(config_path, "r", encoding="utf-8") as f:
         cfg = yaml.safe_load(f)
 
     # ================================
-    # 2. 创建保存目录 + Logger
+    # 创建保存目录 + Logger
     # ================================
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M")
     exp_name = cfg["experiment"]["name"]
-    save_dir = os.path.join("runs", exp_name)
+    save_dir = os.path.join("outputs", exp_name + "_" + timestamp)
     os.makedirs(save_dir, exist_ok=True)
 
     logger = Logger(save_dir)
     logger.log(f"Experiment: {exp_name}")
 
     # ================================
-    # 3. 设备 & 随机种子
+    # 设备 & 随机种子
     # ================================
+    
     device = torch.device(cfg["trainer"].get("device", "cpu"))
     seed = cfg["experiment"].get("seed", 123)
     set_seed(seed)
@@ -54,7 +56,7 @@ def train(config_path: str = "configs/spo_plus_linear.yaml"):
     logger.log(f"Seed: {seed}")
 
     # ================================
-    # 4. 构建 dataloader / model / loss / optimizer
+    # 构建 dataloader / model / loss / optimizer
     # ================================
     dataloader = build_dataloader(cfg)
     logger.log("Dataloader built.")
@@ -77,7 +79,7 @@ def train(config_path: str = "configs/spo_plus_linear.yaml"):
     epochs = cfg["trainer"]["epochs"]
 
     # ================================
-    # 5. Training Loop
+    # Training Loop
     # ================================
     for epoch in range(1, epochs + 1):
         model.train()
@@ -130,14 +132,14 @@ def train(config_path: str = "configs/spo_plus_linear.yaml"):
         logger.log(msg)
 
     # ================================
-    # 6. 保存模型
+    # 保存模型
     # ================================
     model_path = os.path.join(save_dir, "model_final.pt")
     torch.save(model.state_dict(), model_path)
     logger.log(f"Training finished. Model saved to: {model_path}")
 
     # ================================
-    # 7. 绘制曲线（loss / regret）
+    # 绘制曲线（loss / regret）
     # ================================
     plot_curve(os.path.join(save_dir, "losses.csv"),
                os.path.join(save_dir, "loss.png"),
