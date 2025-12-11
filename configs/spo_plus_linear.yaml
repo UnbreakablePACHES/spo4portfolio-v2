@@ -4,7 +4,7 @@ experiment:
 
 data:
   root: "data/FeatureData"     # 和 build_dataset 的 data_dir 保持一致
-  etfs: ["EEM", "EFA", "JPXN", "SPY"]   # 你现在先用 4 个 ETF
+  etfs: ["EEM","EFA","JPXN","SPY","XLK",'VTI','AGG','DBC']   # 你现在先用 4 个 ETF
   features:
     - log_return_input
     - SMA_10
@@ -25,9 +25,6 @@ dataloader:
 
 model:
   type: "linear"
-  params:
-    num_assets: 4         # 和上面 etfs 数量一致
-    input_dim: 7          # 每个资产 7 个特征
 
 portfolio:
   type: "basic"
@@ -48,4 +45,14 @@ optimizer:
 
 trainer:
   epochs: 10
-  device: "cpu"    # 先用 cpu 跑通，有显卡再改成 cuda
+  device: "cpu"   
+
+backtest:
+  enable: true                 # 是否开启回测模式
+  test_start: "2023-01-01"     # 回测起始日期（第一个调仓日）
+  test_end: "2024-12-31"       # 回测结束日期
+  
+  train_window_size: 12        # 训练窗口长度（单位：月），例如用过去 12 个月训练
+  rebalance_freq: "MS"         # 调仓频率，"MS" = Month Start (月初)
+  
+  initial_capital: 1.0         # 初始资金（用于计算净值曲线）
