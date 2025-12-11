@@ -3,8 +3,8 @@ experiment:
   seed: 123
 
 data:
-  root: "data/FeatureData"     # 和 build_dataset 的 data_dir 保持一致
-  etfs: ["EEM","EFA","JPXN","SPY","XLK",'VTI','AGG','DBC']   # 你现在先用 4 个 ETF
+  root: "data/FeatureData"    
+  etfs: ["EEM","EFA","JPXN","SPY","XLK",'VTI','AGG','DBC']   
   features:
     - log_return_input
     - SMA_10

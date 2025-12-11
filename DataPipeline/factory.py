@@ -5,21 +5,22 @@ from .Dataloader import PortfolioDataset
 
 
 def build_dataloader(cfg):
-
-    # 读取 config
     dcfg = cfg["dataloader"]
     dtype = dcfg["type"]
     params = dcfg["params"]
 
     if dtype == "monthly_window":
+        # === 【关键修改】从 config["data"] 中获取 features ===
+        # 这样 YAML 就成了唯一控制特征的地方
+        target_features = cfg["data"].get("features", None)
 
-        # ① 调用 DataBuilder 构建 features_df, labels_df
         features_df, labels_df = build_dataset(
             tickers=cfg["data"]["etfs"],
             data_dir=cfg["data"]["root"],
             start_date=cfg["data"]["train_start"],
             end_date=cfg["data"]["train_end"],
-            dropna=True
+            dropna=True,
+            feature_list=target_features  # <--- 传给 Builder
         )
 
         num_assets = len(cfg["data"]["etfs"])
