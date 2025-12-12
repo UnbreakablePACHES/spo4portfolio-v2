@@ -56,7 +56,7 @@ def run_optuna_tuning(base_cfg, train_start_str, train_end_str, n_trials=10, log
     def objective(trial):
         # === 定义搜索空间 ===
         lr = trial.suggest_float("lr", 1e-4, 5e-2, log=True)
-        epochs = trial.suggest_int("epochs", 5, 30) # 调参时轮数可以少一点，节省时间
+        epochs = trial.suggest_int("epochs", 24, 36) # 调参时轮数可以少一点，节省时间
         
         # 将参数注入配置
         trial_cfg = copy.deepcopy(sub_train_cfg)
