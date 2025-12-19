@@ -10,9 +10,11 @@ def build_dataloader(cfg):
     params = dcfg["params"]
 
     if dtype == "monthly_window":
-        # === 【关键修改】从 config["data"] 中获取 features ===
-        # 这样 YAML 就成了唯一控制特征的地方
         target_features = cfg["data"].get("features", None)
+        
+        # === 【新增】读取 label_window 参数 ===
+        # 如果 config 里没写，默认就是 1 (保持原样)
+        label_win = cfg["data"].get("label_window", 1)
 
         features_df, labels_df = build_dataset(
             tickers=cfg["data"]["etfs"],
@@ -20,7 +22,8 @@ def build_dataloader(cfg):
             start_date=cfg["data"]["train_start"],
             end_date=cfg["data"]["train_end"],
             dropna=True,
-            feature_list=target_features  # <--- 传给 Builder
+            feature_list=target_features,
+            label_window=label_win  # <--- 传入这个参数
         )
 
         num_assets = len(cfg["data"]["etfs"])
