@@ -107,7 +107,8 @@ def rolling_backtest(config_path: str = "configs/spo_plus_linear.yaml"):
             train_start_str=str_train_start,
             train_end_str=str_train_end,
             n_trials=10, 
-            logger=logger
+            logger=logger,
+            seed=cfg["experiment"].get("seed", 42)
         )
         
         # === 将最佳参数应用到当前 Config ===
