@@ -22,7 +22,6 @@ class PortfolioModel(optGrbModel):
         return self.m, self.x
 
     def setObj(self, cost_vec):
-        import numpy as np
         if hasattr(cost_vec, "detach"):
             cost_vec = cost_vec.detach().cpu().numpy()
         for i, c in enumerate(cost_vec):
