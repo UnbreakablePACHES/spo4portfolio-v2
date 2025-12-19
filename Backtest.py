@@ -20,7 +20,8 @@ from utils.analysis import (
     plot_feature_importance_heatmap, 
     calculate_turnover, 
     plot_weights_area, 
-    plot_turnover
+    plot_turnover,
+    calculate_performance_metrics
 )
 from utils.tuner import run_optuna_tuning
 
@@ -222,6 +223,26 @@ def rolling_backtest(config_path: str = "configs/spo_plus_linear.yaml"):
 # 1. 特征重要度分析
     if feature_importance_history:
         plot_feature_importance_heatmap(feature_importance_history, save_dir)
+
+    if all_returns_dfs:
+            full_perf_df = pd.concat(all_returns_dfs)
+            full_perf_df.index.name = "Date"
+            full_perf_df["nav"] = initial_capital * np.exp(full_perf_df["daily_return"].cumsum())
+            
+            full_perf_df.to_csv(os.path.join(save_dir, "rolling_performance.csv"))
+            
+            # ==========================================
+            # === 【新增】计算并打印性能指标 ===
+            # ==========================================
+            metrics = calculate_performance_metrics(full_perf_df, save_dir)
+            
+            logger.log("-" * 30)
+            logger.log(">>> Final Performance Metrics:")
+            logger.log(f"    Annualized Return: {metrics['Annualized Return']:.2%}")
+            logger.log(f"    Annualized Volatility: {metrics['Annualized Volatility']:.2%}")
+            logger.log(f"    Sharpe Ratio:      {metrics['Sharpe Ratio']:.4f}")
+            logger.log(f"    Max Drawdown:      {metrics['Max Drawdown']:.2%}")
+            logger.log("-" * 30)
 
     # 2. 权重和换手率分析
     if all_weights:

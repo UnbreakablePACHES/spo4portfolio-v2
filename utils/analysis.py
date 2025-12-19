@@ -104,3 +104,64 @@ def plot_feature_importance_heatmap(importance_history, save_dir):
     
     # 保存 CSV 方便查看
     df.to_csv(os.path.join(save_dir, "analysis_feature_importance.csv"))
+
+def calculate_performance_metrics(df_results, save_dir=None):
+    """
+    计算策略的核心评价指标：
+    1. 年化收益率 (Annualized Return)
+    2. 年化波动率 (Annualized Volatility)
+    3. 夏普比率 (Sharpe Ratio)
+    4. 最大回撤 (Max Drawdown)
+    
+    参数:
+    - df_results: 必须包含 'daily_return' (log return) 和 'nav' 列
+    """
+    # 1. 准备数据
+    # log returns 用于计算累积收益方便，但在计算波动率时通常也可以直接用
+    log_rets = df_results["daily_return"]
+    nav = df_results["nav"]
+    
+    # 假设一年 252 个交易日
+    TRADING_DAYS = 252
+
+    # 2. 计算指标
+    # A. 年化收益率 (基于复利)
+    # 总收益 = nav_end / nav_start - 1
+    # 年化 = (1 + 总收益)^(252/N) - 1  或者直接用 log_return 均值 * 252
+    mean_daily_ret = log_rets.mean()
+    annualized_return = mean_daily_ret * TRADING_DAYS
+    # 转换为百分比显示的简单收益率近似值: exp(ann_ret) - 1
+    annualized_return_simple = np.exp(annualized_return) - 1
+
+    # B. 年化波动率
+    daily_std = log_rets.std()
+    annualized_vol = daily_std * np.sqrt(TRADING_DAYS)
+
+    # C. 夏普比率 (假设无风险利率 Rf=0)
+    # Sharpe = E[Rp - Rf] / sigma
+    sharpe_ratio = (annualized_return_simple) / annualized_vol if annualized_vol != 0 else 0
+
+    # D. 最大回撤 (MDD)
+    # 滚动最大值
+    rolling_max = nav.cummax()
+    # 回撤 = (当前值 - 历史最高) / 历史最高
+    drawdown = (nav - rolling_max) / rolling_max
+    max_drawdown = drawdown.min() # 这是一个负数，例如 -0.20
+
+    # 3. 汇总结果
+    metrics = {
+        "Annualized Return": annualized_return_simple,
+        "Annualized Volatility": annualized_vol,
+        "Sharpe Ratio": sharpe_ratio,
+        "Max Drawdown": max_drawdown
+    }
+
+    # 4. 如果指定了保存路径，保存到 txt
+    if save_dir:
+        import json
+        metrics_path = os.path.join(save_dir, "performance_metrics.txt")
+        with open(metrics_path, "w") as f:
+            for k, v in metrics.items():
+                f.write(f"{k}: {v:.4f}\n")
+    
+    return metrics

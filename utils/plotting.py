@@ -33,10 +33,6 @@ def plot_backtest_results(df_results, save_dir):
     绘制回测结果图：
     1. 累计净值曲线 (Line Chart)
     2. 月度收益分布 (Bar Chart)
-
-    参数:
-    - df_results: DataFrame, 必须包含索引(Date), 以及列 'daily_return'(log return) 和 'nav'
-    - save_dir: str, 图片保存文件夹路径
     """
     # 设置样式
     plt.style.use('ggplot')
@@ -44,8 +40,8 @@ def plot_backtest_results(df_results, save_dir):
     # 1. 准备数据
     nav = df_results["nav"]
     
-    # 计算月度收益 (假设 daily_return 是对数收益率，resample 求和后再转简单收益率)
-    # 如果 daily_return 已经是简单收益率，这里计算逻辑需要调整 (通常 log return 方便累加)
+    # 计算月度收益
+    # 注意：这里假设 df_results["daily_return"] 是对数收益率
     monthly_log_ret = df_results["daily_return"].resample("M").sum()
     monthly_simple_ret = np.exp(monthly_log_ret) - 1
 
@@ -60,20 +56,36 @@ def plot_backtest_results(df_results, save_dir):
     ax1.grid(True, alpha=0.3)
 
     # --- 子图2: 月度收益 ---
-    # 根据正负值设定颜色
     colors = ['tab:red' if x < 0 else 'tab:green' for x in monthly_simple_ret.values]
     
-    # 绘制柱状图 (width设为20天左右，避免太细)
+    # 绘制柱状图
     ax2.bar(monthly_simple_ret.index, monthly_simple_ret.values, width=20, color=colors, alpha=0.8, label='Monthly Return')
 
-    # x轴日期格式化
+    # ==========================================
+    # 【修改重点】X轴标签防重叠处理
+    # ==========================================
     ax2.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m'))
-    ax2.xaxis.set_major_locator(mdates.MonthLocator())
-    plt.setp(ax2.xaxis.get_majorticklabels(), rotation=45, ha='right')
+    
+    # 动态判断数据长度，决定标签间隔
+    num_months = len(monthly_simple_ret)
+    if num_months <= 12:
+        interval = 1     # 1年以内：逐月显示
+    elif num_months <= 36:
+        interval = 3     # 3年以内：每季度显示
+    elif num_months <= 60:
+        interval = 6     # 5年以内：每半年显示
+    else:
+        interval = 12    # 超长回测：每年显示
+
+    ax2.xaxis.set_major_locator(mdates.MonthLocator(interval=interval))
+    
+    # 旋转45度，并略微缩小字体
+    plt.setp(ax2.xaxis.get_majorticklabels(), rotation=45, ha='right', fontsize=10)
+    # ==========================================
 
     ax2.set_title('Monthly Returns', fontsize=14, fontweight='bold')
     ax2.set_ylabel('Return', fontsize=12)
-    ax2.axhline(0, color='black', linewidth=0.8, linestyle='-') # 0轴线
+    ax2.axhline(0, color='black', linewidth=0.8, linestyle='-') 
     ax2.grid(True, alpha=0.3)
 
     plt.tight_layout()
