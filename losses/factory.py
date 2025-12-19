@@ -1,5 +1,6 @@
 from .SPOPlusLoss import SPOPlusLoss
 
+
 def build_loss(cfg, portfolio_model=None):
     """
     根据 config["loss"]["type"] 构建 loss

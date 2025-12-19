@@ -4,6 +4,7 @@ from pyepo.model.grb.grbmodel import optGrbModel
 import gurobipy as gp
 from pyepo.model.grb.grbmodel import optGrbModel
 
+
 class PortfolioModelWithFee:
     def __init__(self, n_assets, gamma=0.003, budget=1.0):
         self.n_assets = n_assets
@@ -13,25 +14,17 @@ class PortfolioModelWithFee:
 
         # 投资比例变量 x_i ∈ [0, 1]
         self.x = self._model.addVars(
-            n_assets,
-            lb=0.0,
-            ub=1.0,
-            vtype=gp.GRB.CONTINUOUS,
-            name="x"
+            n_assets, lb=0.0, ub=1.0, vtype=gp.GRB.CONTINUOUS, name="x"
         )
 
         # 手续费辅助变量 z_i ≥ |x_i - prev_i|
         self.z = self._model.addVars(
-            n_assets,
-            lb=0.0,
-            vtype=gp.GRB.CONTINUOUS,
-            name="z"
+            n_assets, lb=0.0, vtype=gp.GRB.CONTINUOUS, name="z"
         )
 
         # 预算约束
         self.budget_constr = self._model.addConstr(
-            gp.quicksum(self.x[i] for i in range(n_assets)) == budget,
-            name="budget"
+            gp.quicksum(self.x[i] for i in range(n_assets)) == budget, name="budget"
         )
 
         # 保存手续费相关约束以便后续删除更新
@@ -56,10 +49,7 @@ class PortfolioModelWithFee:
         transaction_cost = self.gamma * gp.quicksum(
             self.z[i] for i in range(self.n_assets)
         )
-        self._model.setObjective(
-            expected_return - transaction_cost,
-            gp.GRB.MAXIMIZE
-        )
+        self._model.setObjective(expected_return - transaction_cost, gp.GRB.MAXIMIZE)
 
     def optimize(self, cost_vec, prev_weight):
         self.setObj(cost_vec, prev_weight)

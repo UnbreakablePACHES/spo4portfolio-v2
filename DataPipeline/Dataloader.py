@@ -21,5 +21,3 @@ class PortfolioDataset(Dataset):
         x = torch.tensor(self.X[idx], dtype=torch.float32)  # (N, F)
         y = torch.tensor(self.y[idx], dtype=torch.float32)  # (N,)
         return x, y
-
-

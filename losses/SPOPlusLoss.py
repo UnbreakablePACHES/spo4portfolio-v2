@@ -2,6 +2,7 @@
 import torch
 from pyepo.func import SPOPlus
 
+
 class SPOPlusLoss(torch.nn.Module):
     def __init__(self, opt_model):
         super().__init__()
@@ -24,16 +25,13 @@ class SPOPlusLoss(torch.nn.Module):
             true_sols.append(sol)
             true_objs.append(obj)
 
-        true_sols = torch.tensor(true_sols, dtype=torch.float32, device=pred_cost.device)  # (B, N)
-        true_objs = torch.tensor(true_objs, dtype=torch.float32, device=pred_cost.device)  # (B,)
+        true_sols = torch.tensor(
+            true_sols, dtype=torch.float32, device=pred_cost.device
+        )  # (B, N)
+        true_objs = torch.tensor(
+            true_objs, dtype=torch.float32, device=pred_cost.device
+        )  # (B,)
 
         # 2️⃣ 一次性把整批数据喂给 SPOPlus
         loss = self.loss_fn(pred_cost, true_cost, true_sols, true_objs)
         return loss
-
-
-
-
-
-
-

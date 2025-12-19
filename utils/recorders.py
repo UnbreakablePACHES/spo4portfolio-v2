@@ -1,6 +1,7 @@
 import csv
 import os
 
+
 class LossRecorder:
     def __init__(self, save_dir):
         self.path = os.path.join(save_dir, "losses.csv")
@@ -12,6 +13,7 @@ class LossRecorder:
         with open(self.path, "a", newline="") as f:
             writer = csv.writer(f)
             writer.writerow([epoch, loss])
+
 
 class WeightRecorder:
     def __init__(self, save_dir, num_assets):
@@ -27,6 +29,7 @@ class WeightRecorder:
         with open(self.path, "a", newline="") as f:
             writer = csv.writer(f)
             writer.writerow([epoch] + list(w))
+
 
 class RegretRecorder:
     def __init__(self, save_dir):

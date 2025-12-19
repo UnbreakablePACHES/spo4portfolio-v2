@@ -1,11 +1,18 @@
 import pandas as pd
 
-def build_dataset(tickers, data_dir="data/FeatureData", dropna=True,
-                  start_date=None, end_date=None, 
-                  feature_list=None, label_window=1): # <--- 确保这里有 feature_list 参数
+
+def build_dataset(
+    tickers,
+    data_dir="data/FeatureData",
+    dropna=True,
+    start_date=None,
+    end_date=None,
+    feature_list=None,
+    label_window=1,
+):  # <--- 确保这里有 feature_list 参数
     """
     构建用于模型训练的数据集
-    
+
     参数:
     - tickers: List[str], ETF 名称列表
     - data_dir: str, CSV 文件夹路径
@@ -20,8 +27,13 @@ def build_dataset(tickers, data_dir="data/FeatureData", dropna=True,
     # 如果没传特征列表，给一个默认值防止报错
     if feature_list is None:
         feature_list = [
-            "log_return_input", "SMA_10", "price_bias", "RSI_14",
-            "MACD_diff", "bollinger_width", "volume_bias"
+            "log_return_input",
+            "SMA_10",
+            "price_bias",
+            "RSI_14",
+            "MACD_diff",
+            "bollinger_width",
+            "volume_bias",
         ]
 
     for ticker in tickers:
@@ -51,7 +63,7 @@ def build_dataset(tickers, data_dir="data/FeatureData", dropna=True,
         # 4. 根据 feature_list 筛选特征列
         # 先判断 CSV 里有没有这些列
         available_cols = [c for c in feature_list if c in df.columns]
-        
+
         # 校验：如果有特征缺失，报错提示
         if len(available_cols) != len(feature_list):
             missing = set(feature_list) - set(available_cols)
@@ -73,13 +85,20 @@ def build_dataset(tickers, data_dir="data/FeatureData", dropna=True,
             # 即 sum(r_t, r_{t+1}, ..., r_{t+19})。
             # rolling(20).sum() 在 t+19 时刻的值正是这个 sum。
             # 所以我们需要把 t+19 的值 shift 回 t，偏移量是 -(window-1) = -19。
-            
+
             # 计算滚动和 (Rolling Sum)
-            indexer = pd.api.indexers.FixedForwardWindowIndexer(window_size=label_window)
+            indexer = pd.api.indexers.FixedForwardWindowIndexer(
+                window_size=label_window
+            )
             # 或者用更简单的写法:
             # shift(-(N-1)) 是因为 rolling 包含当前行
-            rolling_sum = df["log_return"].rolling(window=label_window).sum().shift(-(label_window - 1))
-            
+            rolling_sum = (
+                df["log_return"]
+                .rolling(window=label_window)
+                .sum()
+                .shift(-(label_window - 1))
+            )
+
             df_label = rolling_sum.to_frame(name=ticker)
         label_dfs.append(df_label)
 
@@ -98,11 +117,10 @@ def build_dataset(tickers, data_dir="data/FeatureData", dropna=True,
         #    注意：这里要确保列名切分正确
         feat_cols = merged_feature.columns
         label_cols = merged_label.columns
-        
+
         merged_feature = full_df[feat_cols]
         merged_label = full_df[label_cols]
 
     return merged_feature, merged_label
 
     return merged_feature, merged_label
-

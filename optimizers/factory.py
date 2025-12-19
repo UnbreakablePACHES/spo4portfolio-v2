@@ -16,7 +16,7 @@ def build_optimizer(cfg, model):
         return torch.optim.Adam(
             model.parameters(),
             lr=params.get("lr", 1e-3),
-            weight_decay=params.get("weight_decay", 0.0)
+            weight_decay=params.get("weight_decay", 0.0),
         )
 
     elif otype == "sgd":
@@ -24,14 +24,14 @@ def build_optimizer(cfg, model):
             model.parameters(),
             lr=params.get("lr", 0.01),
             momentum=params.get("momentum", 0.0),
-            weight_decay=params.get("weight_decay", 0.0)
+            weight_decay=params.get("weight_decay", 0.0),
         )
 
     elif otype == "adamw":
         return torch.optim.AdamW(
             model.parameters(),
             lr=params.get("lr", 1e-3),
-            weight_decay=params.get("weight_decay", 0.01)
+            weight_decay=params.get("weight_decay", 0.01),
         )
 
     else:

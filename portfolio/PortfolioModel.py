@@ -1,6 +1,7 @@
 import gurobipy as gp
 from pyepo.model.grb.grbmodel import optGrbModel
 
+
 class PortfolioModel(optGrbModel):
     def __init__(self, n_assets, budget=1.0, lb=0.0, ub=1.0):
         self.n_assets = n_assets
@@ -38,7 +39,3 @@ class PortfolioModel(optGrbModel):
         self.m.optimize()
         sol = [self.x[i].x for i in range(self.n_assets)]
         return sol, self.m.objVal
-
-
-
-
