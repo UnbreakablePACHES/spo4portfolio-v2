@@ -1,0 +1,56 @@
+experiment:
+  name: "LinearNNSoftmax"  
+  seed: 42
+
+data:
+  root: "data/FeatureData"    
+  etfs: ["EEM","EFA","JPXN","SPY","XLK",'VTI','AGG','DBC']   
+  
+  # 依然建议开启长线预测窗口 (如果你的 DataBuilder 改好了的话)
+  label_window: 20 
+  
+  features:
+    - log_return_input
+    - SMA_10
+    - price_bias
+    - RSI_14
+    - MACD_diff
+    - bollinger_width
+    - volume_bias
+
+dataloader:
+  type: "monthly_window"
+  params:
+    batch_size: 63
+    shuffle: true
+
+model:
+  type: "softmax"         
+  params:  
+    hidden_layers: [32]     
+    dropout_rate: 0.0     # 纯线性不需要 dropout
+
+portfolio:
+  type: "basic"
+  params:
+    budget: 1.0
+
+loss:
+  type: "return_loss"     
+
+optimizer:
+  type: "adam"
+  params:
+    lr: 0.001             
+    weight_decay: 0.0
+
+trainer:
+  epochs: 30             
+  device: "cpu"           
+
+backtest:
+  test_start: "2023-01-01"
+  test_end: "2024-12-31"
+  train_window_size: 12
+  rebalance_freq: "MS"
+  initial_capital: 1.0
