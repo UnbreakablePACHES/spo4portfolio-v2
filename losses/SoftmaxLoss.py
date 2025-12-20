@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 
+
 class SoftmaxLoss(nn.Module):
     def __init__(self):
         super().__init__()
@@ -13,6 +14,6 @@ class SoftmaxLoss(nn.Module):
         # 计算组合成本: w * c
         # (batch, assets) * (batch, assets) -> sum(dim=1) -> (batch, )
         portfolio_cost = (weights * true_cost).sum(dim=1)
-        
+
         # 目标是最小化平均成本 (即最大化平均收益)
         return portfolio_cost.mean()

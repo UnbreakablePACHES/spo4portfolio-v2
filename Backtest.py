@@ -28,6 +28,7 @@ from utils.tuner import run_optuna_tuning
 
 def set_seed(seed):
     import random
+
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -44,7 +45,7 @@ def rolling_backtest(config_path: str = "configs/spo_plus_linear.yaml"):
         raise ValueError("Config file missing 'backtest' section!")
 
     bt_cfg = cfg["backtest"]
-    
+
     # 区分实验名称
     model_type = cfg["model"]["type"]
     exp_name = cfg["experiment"]["name"] + f"_{model_type}_rolling"
@@ -55,7 +56,7 @@ def rolling_backtest(config_path: str = "configs/spo_plus_linear.yaml"):
 
     logger = Logger(save_dir)
     logger.log(f"Rolling Backtest Config Loaded. Model Type: {model_type}")
-    
+
     feature_names = cfg["data"]["features"]
     logger.log(f"Feature Names ({len(feature_names)}): {feature_names}")
     log_experiment_setup(logger, cfg)
@@ -73,7 +74,7 @@ def rolling_backtest(config_path: str = "configs/spo_plus_linear.yaml"):
 
     all_weights = []
     all_returns_dfs = []
-    feature_importance_history = [] 
+    feature_importance_history = []
 
     # 3. 滚动循环
     for i, current_date in enumerate(rebalance_dates):
@@ -131,7 +132,9 @@ def rolling_backtest(config_path: str = "configs/spo_plus_linear.yaml"):
 
         model = build_model(cfg).to(device)
         portfolio_model = build_portfolio_model(cfg)
-        loss_fn = build_loss(cfg, portfolio_model) # 这里 Factory 会根据 loss type 自动返回正确的 loss
+        loss_fn = build_loss(
+            cfg, portfolio_model
+        )  # 这里 Factory 会根据 loss type 自动返回正确的 loss
         optimizer = build_optimizer(cfg, model)
 
         model.train()
@@ -140,24 +143,24 @@ def rolling_backtest(config_path: str = "configs/spo_plus_linear.yaml"):
         for epoch in range(1, total_epochs + 1):
             epoch_loss_sum = 0.0
             batch_count = 0
-            
+
             # 用于日志记录
-            last_out = None 
+            last_out = None
             last_true = None
 
             for batch in train_loader:
                 features = batch["features"].to(device)
-                c_true = -batch["cost"].to(device) # Cost是负收益，取负变回 Return? 
-                # 纠正：Loader里 cost = -log_return. 
+                c_true = -batch["cost"].to(device)  # Cost是负收益，取负变回 Return?
+                # 纠正：Loader里 cost = -log_return.
                 # 这里 c_true = -(-log_return) = log_return.
-                # SPOPlusLoss 需要 True Cost (负收益). 
+                # SPOPlusLoss 需要 True Cost (负收益).
                 # PortfolioReturnLoss 需要 True Cost (负收益) 或者 True Return.
                 # 让我们保持统一：传入 True Cost (负收益)
-                
-                c_true_input = batch["cost"].to(device) # 这是一个负数 (Cost)
+
+                c_true_input = batch["cost"].to(device)  # 这是一个负数 (Cost)
 
                 optimizer.zero_grad()
-                
+
                 # === 【修改 1】训练逻辑分支 ===
                 if model_type == "softmax":
                     # Softmax 输出直接就是权重 weights
@@ -189,7 +192,7 @@ def rolling_backtest(config_path: str = "configs/spo_plus_linear.yaml"):
         # === Inference (推断) ===
         # =============================================================
         model.eval()
-        
+
         # 只有线性模型才提取特征重要度
         if hasattr(model, "linear") and model_type == "linear":
             imp_dict = extract_linear_importance(
@@ -197,7 +200,7 @@ def rolling_backtest(config_path: str = "configs/spo_plus_linear.yaml"):
             )
             imp_dict["Date"] = str_test_start
             feature_importance_history.append(imp_dict)
-            
+
         df_features, df_labels = build_dataset(
             tickers=cfg["data"]["etfs"],
             data_dir=cfg["data"]["root"],
@@ -222,7 +225,7 @@ def rolling_backtest(config_path: str = "configs/spo_plus_linear.yaml"):
         # === 【修改 2】推断逻辑分支 ===
         with torch.no_grad():
             model_out = model(x_input)
-            
+
             if model_type == "softmax":
                 # Softmax: 输出直接是权重
                 w_opt = model_out[0].cpu().numpy()
@@ -279,7 +282,7 @@ def rolling_backtest(config_path: str = "configs/spo_plus_linear.yaml"):
         weights_df = pd.DataFrame(all_weights).set_index("Date")
         weights_df.index = pd.to_datetime(weights_df.index)
         weights_df = weights_df.astype(float)
-        
+
         weights_df.to_csv(os.path.join(save_dir, "rolling_weights.csv"))
         plot_weights_area(weights_df, save_dir)
         turnover = calculate_turnover(weights_df)
@@ -293,6 +296,6 @@ def rolling_backtest(config_path: str = "configs/spo_plus_linear.yaml"):
 if __name__ == "__main__":
     # Linear SPO+
     # rolling_backtest("configs/spo_plus_linear.yaml")
-    
+
     # Linear Softmax
     rolling_backtest("configs/softmax_linear.yaml")

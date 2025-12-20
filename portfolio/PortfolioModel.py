@@ -25,7 +25,7 @@ class PortfolioModel(optGrbModel):
 
         m = gp.Model()
         m.setParam("OutputFlag", 0)
-        
+
         # 如果传入了线程数设置 (用于 Optuna 并行加速)
         if threads is not None:
             m.setParam("Threads", threads)
@@ -58,14 +58,14 @@ class PortfolioModel(optGrbModel):
             self.setObj(cost_vec)
 
         self.m.optimize()
-        
+
         # 处理可能的无解情况
         if self.m.Status == gp.GRB.OPTIMAL:
             sol = [self.x[i].x for i in range(self.n_assets)]
             obj = self.m.objVal
         else:
             # 如果求解失败，返回均匀分布作为兜底
-            sol = [1.0/self.n_assets] * self.n_assets
+            sol = [1.0 / self.n_assets] * self.n_assets
             obj = 0.0
-            
+
         return sol, obj
