@@ -1,35 +1,39 @@
+import torch.nn as nn
 from .LinearInferencer import LinearInferencer
 from .SoftmaxAllocator import SoftmaxAllocator
-# 如果未来有其他模型，也在这里 import
-# from .LSTMInferencer import LSTMInferencer
-# from .TransformerInferencer import TransformerInferencer
-
 
 def build_model(cfg):
-    """
-    根据 config["model"]["type"] 构建模型
-    """
     mcfg = cfg["model"]
     mtype = mcfg["type"]
-    params = mcfg["params"]
+    params = mcfg.get("params", {}) # 获取 params，如果没有则为空字典
 
     if mtype == "linear":
-        # === 【自动推断】 ===
-        # 从 data.features 列表获取长度，不再依赖 model.params.input_dim
-        # 这样 YAML 里就不用手写 '7' 了
-        feat_list = cfg["data"].get("features", [])
-        auto_input_dim = len(feat_list)
+        # 自动推断 input_dim
+        feature_list = cfg["data"].get("features", [])
+        input_dim = len(feature_list)
+        
+        # 兼容旧配置：如果 config 里硬编码了 input_dim，优先使用
+        if "input_dim" in params:
+            input_dim = params["input_dim"]
 
         return LinearInferencer(
             num_assets=len(cfg["data"]["etfs"]),
-            input_dim=auto_input_dim,
+            input_dim=input_dim
         )
 
-    elif mtype == "softmax":  
+    elif mtype == "softmax":
+        # 自动推断 input_dim
+        feature_list = cfg["data"].get("features", [])
+        input_dim = len(feature_list)
+
         return SoftmaxAllocator(
             num_assets=len(cfg["data"]["etfs"]),
-            input_dim=len(cfg["data"]["features"]),
-            hidden_dim=params.get("hidden_dim", None)
+            input_dim=input_dim,
+            # ====================================================
+            # 【核心修复】这里必须改用 hidden_layers，不能再传 hidden_dim
+            # ====================================================
+            hidden_layers=params.get("hidden_layers", []), 
+            dropout_rate=params.get("dropout_rate", 0.0)
         )
 
     else:
