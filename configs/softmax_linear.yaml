@@ -6,7 +6,7 @@ data:
   root: "data/FeatureData"    
   etfs: ["EEM","EFA","JPXN","SPY","XLK",'VTI','AGG','DBC']   
   
-  # 依然建议开启长线预测窗口 (如果你的 DataBuilder 改好了的话)
+
   label_window: 20 
   
   features:
@@ -28,7 +28,7 @@ model:
   type: "softmax"         
   params:  
     hidden_layers: []     
-    dropout_rate: 0.0     # 纯线性不需要 dropout
+    dropout_rate: 0.0    
 
 portfolio:
   type: "basic"
