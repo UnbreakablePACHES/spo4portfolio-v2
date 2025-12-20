@@ -1,4 +1,3 @@
-# losses/SPOPlusLoss.py
 import torch
 from pyepo.func import SPOPlus
 
