@@ -1,7 +1,7 @@
 import torch.nn as nn
 
 
-class SoftmaxLoss(nn.Module):
+class MaxReturnLoss(nn.Module):
     def __init__(self):
         super().__init__()
 

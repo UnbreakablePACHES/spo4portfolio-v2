@@ -1,5 +1,5 @@
 from .SPOPlusLoss import SPOPlusLoss
-from .SoftmaxLoss import SoftmaxLoss
+from .SoftmaxLoss import MaxReturnLoss
 
 
 def build_loss(cfg, portfolio_model=None):
@@ -14,8 +14,8 @@ def build_loss(cfg, portfolio_model=None):
             raise ValueError("SPOPlusLoss requires a portfolio_model")
         return SPOPlusLoss(portfolio_model)
 
-    elif ltype == "return_loss":
-        return SoftmaxLoss()
+    elif ltype == "max_return":
+        return MaxReturnLoss()
 
     # 预留给未来的 robust 损失
     elif ltype == "robust_ro":
