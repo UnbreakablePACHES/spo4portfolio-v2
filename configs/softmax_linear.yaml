@@ -35,8 +35,10 @@ portfolio:
   params:
     budget: 1.0
 
-loss:
-  type: "max_return"     
+loss: 
+  type: "softmax_spo"     
+  params:
+    temperature: 1.0
 
 optimizer:
   type: "adam"

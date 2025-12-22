@@ -1,5 +1,5 @@
 from .SPOPlusLoss import SPOPlusLoss
-from .SoftmaxLoss import MaxReturnLoss
+from .SoftmaxLoss import MaxReturnLoss, SoftmaxSPOLoss
 
 
 def build_loss(cfg, portfolio_model=None):
@@ -16,6 +16,11 @@ def build_loss(cfg, portfolio_model=None):
 
     elif ltype == "max_return":
         return MaxReturnLoss()
+
+    elif ltype == "softmax_spo":  # 新增这个分支
+        # 可以从 config 读取 temperature，默认为 1.0
+        temp = cfg["loss"].get("params", {}).get("temperature", 1.0)
+        return SoftmaxSPOLoss(temperature=temp)
 
     # 预留给未来的 robust 损失
     elif ltype == "robust_ro":
