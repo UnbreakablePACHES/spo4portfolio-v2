@@ -28,7 +28,7 @@ def build_portfolio_model(cfg):
     elif ptype == "with_fee":
         return PortfolioModelWithFee(
             n_assets=real_num_assets,  # <--- 改这里，传入动态计算的值
-            gamma=params.get("gamma", 0.003),
+            gamma=params.get("gamma", 0.005),
             budget=params.get("budget", 1.0),
         )
 

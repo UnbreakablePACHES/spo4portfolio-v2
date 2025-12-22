@@ -28,11 +28,10 @@ model:
     input_dim: 7          # 特征数量
 
 portfolio:
-  type: "basic"
+  type: "with_fee"
   params:
     budget: 1.0
-    lb: 0.0
-    ub: 1.0
+    gamma: 0.005
 
 loss:
   type: "spo_plus"
