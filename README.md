@@ -43,19 +43,3 @@
 4. max_sharpe
    - 描述: 最大化夏普比率，兼顾收益与波动，稳健推荐。
    - 配置: { type: "max_sharpe", params: { risk_free_rate: 0.02 } }
-
----
-
-## 3. 推荐配置组合
-
-### 组合1: 学术复现 (SPO+)
-model: { type: "linear" }
-loss: { type: "spo_plus" }
-
-### 组合2: 快速实验 (Soft-SPO)
-model: { type: "linear" }
-loss: { type: "softmax_spo", params: { temperature: 1.0 } }
-
-### 组合3: 实战策略 (End-to-End)
-model: { type: "softmax_allocator", params: { hidden_layers: [64] } }
-loss: { type: "max_sharpe" }
