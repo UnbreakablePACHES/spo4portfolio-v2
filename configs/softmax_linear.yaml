@@ -36,7 +36,7 @@ portfolio:
     budget: 1.0
 
 loss: 
-  type: "softmax_spo"     
+  type: "max_sharpe"     
   params:
     temperature: 1.0
 

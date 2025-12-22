@@ -1,5 +1,6 @@
 from .SPOPlusLoss import SPOPlusLoss
-from .SoftmaxLoss import MaxReturnLoss, SoftmaxSPOLoss
+from .SoftmaxLoss import SoftmaxSPOLoss
+from .MarkowitzLoss import MaxReturnLoss, MaxSharpeLoss
 
 
 def build_loss(cfg, portfolio_model=None):
@@ -13,9 +14,6 @@ def build_loss(cfg, portfolio_model=None):
         if portfolio_model is None:
             raise ValueError("SPOPlusLoss requires a portfolio_model")
         return SPOPlusLoss(portfolio_model)
-
-    elif ltype == "max_return":
-        return MaxReturnLoss()
 
     elif ltype == "softmax_spo":  # 新增这个分支
         # 可以从 config 读取 temperature，默认为 1.0
@@ -31,6 +29,11 @@ def build_loss(cfg, portfolio_model=None):
 
     elif ltype == "robust_knn":
         raise NotImplementedError("k-NN loss not implemented yet")
+
+    elif ltype == "max_return":
+        return MaxReturnLoss()
+    elif ltype == "max_sharpe":
+        return MaxSharpeLoss()
 
     else:
         raise ValueError(f"Unknown loss type: {ltype}")

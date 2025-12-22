@@ -27,6 +27,8 @@ def log_experiment_setup(logger, cfg):
     logger.log(
         f"Training Params: Epochs={cfg['trainer']['epochs']}, LR={cfg['optimizer']['params']['lr']}, Device={cfg['trainer'].get('device', 'cpu')}"
     )
+    logger.log(f"Predict Model: {cfg['model']['type']}")
+    logger.log(f"Loss: {cfg['loss']['type']}")
     logger.log(f"--------------------------------------------------")
 
 
