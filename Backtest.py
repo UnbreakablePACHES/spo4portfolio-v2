@@ -144,19 +144,8 @@ def rolling_backtest(config_path: str = "configs/spo_plus_linear.yaml"):
             epoch_loss_sum = 0.0
             batch_count = 0
 
-            # 用于日志记录
-            last_out = None
-            last_true = None
-
             for batch in train_loader:
                 features = batch["features"].to(device)
-                c_true = -batch["cost"].to(device)  # Cost是负收益，取负变回 Return?
-                # 纠正：Loader里 cost = -log_return.
-                # 这里 c_true = -(-log_return) = log_return.
-                # SPOPlusLoss 需要 True Cost (负收益).
-                # PortfolioReturnLoss 需要 True Cost (负收益) 或者 True Return.
-                # 让我们保持统一：传入 True Cost (负收益)
-
                 c_true_input = batch["cost"].to(device)  # 这是一个负数 (Cost)
 
                 optimizer.zero_grad()
@@ -167,20 +156,17 @@ def rolling_backtest(config_path: str = "configs/spo_plus_linear.yaml"):
                     weights = model(features)
                     # Loss = mean(weights * cost) -> minimize cost
                     loss = loss_fn(weights, c_true_input)
-                    last_out = weights
                 else:
                     # Linear 输出预测收益，取负变为预测成本
                     pred_return = model(features)
                     pred_cost = -pred_return
                     loss = loss_fn(pred_cost, c_true_input)
-                    last_out = pred_cost
 
                 loss.backward()
                 optimizer.step()
 
                 epoch_loss_sum += loss.item()
                 batch_count += 1
-                last_true = c_true_input
 
             avg_loss = epoch_loss_sum / batch_count if batch_count > 0 else 0.0
 
