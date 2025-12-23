@@ -15,6 +15,8 @@ class SPOPlusLoss(nn.Module):
         SPO+ Loss = Obj(w_true, c_spo) - Obj(w_spo, c_spo)
         确保结果 >= 0。
 
+        Obj(w, c) = c^T w + gamma_l1 * ||w - w_prev||_1 + gamma_l2 * ||w - w_prev||_2^2
+
         Args:
             pred_cost: (B, N) 预测成本 (通常是 -预测收益)
             true_cost: (B, N) 真实成本 (通常是 -真实收益)
@@ -81,28 +83,36 @@ class SPOPlusLoss(nn.Module):
 
         # 4. 计算 Loss
         # 公式: Loss = Obj_spo(w_true) - Obj_spo(w_spo)
-        # Obj(w, c) = c^T w + gamma * ||w - w_prev||_1
+        # Obj(w, c) = c^T w + L1_Fee + L2_Penalty
         # 注意：这里的 Obj 是“成本目标”，我们要最小化它。
         # w_spo 是该目标下的最优解，所以 Obj(w_spo) 必然 <= Obj(w_true)
         # 因此 Loss 必然 >= 0。
 
-        # 获取 gamma (如果没有则为 0)
-        gamma = getattr(self.opt_model, "gamma", 0.0)
+        # === 获取系数 ===
+        # 优先读取 gamma_l1, 如果没有则读取 gamma (兼容旧代码), 默认为 0
+        gamma_l1 = getattr(
+            self.opt_model, "gamma_l1", getattr(self.opt_model, "gamma", 0.0)
+        )
+        # 读取 gamma_l2, 默认为 0
+        gamma_l2 = getattr(self.opt_model, "gamma_l2", 0.0)
 
-        # 计算交易费部分 (L1 Lasso)
-        # 如果 prev_weights 为 0 (Legacy模式)，这里计算的是 w 的 L1 范数，
-        # 但因为 sum(w)=1 且 w>=0，所以 L1 范数恒等于 1，这就变成了常数，不影响梯度。
-        fee_true = gamma * torch.abs(true_sols - prev_weights_t).sum(dim=1)
-        fee_spo = gamma * torch.abs(spo_sols - prev_weights_t).sum(dim=1)
-
-        # 计算线性成本部分 (c^T w)
+        # === A. 线性成本项 (c^T w) ===
         # cost_spo 带有梯度，w 是常数
         linear_true = (cost_spo * true_sols).sum(dim=1)
         linear_spo = (cost_spo * spo_sols).sum(dim=1)
 
-        # 总目标值
-        obj_true = linear_true + fee_true
-        obj_spo = linear_spo + fee_spo
+        # === B. L1 交易费项 (gamma_l1 * |w - prev|) ===
+        fee_l1_true = gamma_l1 * torch.abs(true_sols - prev_weights_t).sum(dim=1)
+        fee_l1_spo = gamma_l1 * torch.abs(spo_sols - prev_weights_t).sum(dim=1)
+
+        # === C. L2 换仓惩罚项 (gamma_l2 * (w - prev)^2) ===
+        # 新增部分
+        fee_l2_true = gamma_l2 * ((true_sols - prev_weights_t) ** 2).sum(dim=1)
+        fee_l2_spo = gamma_l2 * ((spo_sols - prev_weights_t) ** 2).sum(dim=1)
+
+        # === 总目标值 ===
+        obj_true = linear_true + fee_l1_true + fee_l2_true
+        obj_spo = linear_spo + fee_l1_spo + fee_l2_spo
 
         # 计算均值 Loss
         loss = (obj_true - obj_spo).mean()

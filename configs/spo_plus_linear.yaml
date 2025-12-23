@@ -31,8 +31,8 @@ portfolio:
   type: "with_fee"
   params:
     budget: 1.0
-    gamma: 0.005
-
+    gamma_l1: 0.005
+    gamma_l2: 0.42
 loss:
   type: "spo_plus"
 
