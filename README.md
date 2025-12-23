@@ -17,10 +17,8 @@ A minimal research sandbox for stochastic programming on ETF portfolios. The cod
 2. Inspect a config like `configs/spo_plus_linear.yaml` to set your data path, ETF tickers, and training window.
 3. Run a rolling backtest :
    ```bash
-   python - <<'PY'
    from Backtest import rolling_backtest
    rolling_backtest("configs/spo_plus_linear.yaml")
-   PY
    ```
 
 ## Configuration highlights
