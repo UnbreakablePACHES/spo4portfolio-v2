@@ -150,18 +150,12 @@ def rolling_backtest(config_path: str = "configs/spo_plus_linear.yaml"):
 
             for batch in train_loader:
                 features = batch["features"].to(device)
-                c_true = -batch["cost"].to(device)  # Cost是负收益，取负变回 Return?
-                # 纠正：Loader里 cost = -log_return.
-                # 这里 c_true = -(-log_return) = log_return.
-                # SPOPlusLoss 需要 True Cost (负收益).
-                # PortfolioReturnLoss 需要 True Cost (负收益) 或者 True Return.
-                # 让我们保持统一：传入 True Cost (负收益)
+                c_true = -batch["cost"].to(device)  # Cost是负收益，取负变回 Return
 
-                c_true_input = batch["cost"].to(device)  # 这是一个负数 (Cost)
+                c_true_input = batch["cost"].to(device)
 
                 optimizer.zero_grad()
 
-                # === 【修改 1】训练逻辑分支 ===
                 if model_type == "softmax":
                     # Softmax 输出直接就是权重 weights
                     weights = model(features)
@@ -169,10 +163,14 @@ def rolling_backtest(config_path: str = "configs/spo_plus_linear.yaml"):
                     loss = loss_fn(weights, c_true_input)
                     last_out = weights
                 else:
-                    # Linear 输出预测收益，取负变为预测成本
+                    # Linear 模式 (SPO+ 或 MSE/LR)
                     pred_return = model(features)
-                    pred_cost = -pred_return
+                    pred_cost = -pred_return  # 预测收益转为预测成本
+
+                    # 如果 loss_fn 是 MSELoss，这里计算的就是 MSE(pred_cost, true_cost)
+                    # 等价于 MSE(pred_return, true_return)
                     loss = loss_fn(pred_cost, c_true_input)
+
                     last_out = pred_cost
 
                 loss.backward()
@@ -221,7 +219,20 @@ def rolling_backtest(config_path: str = "configs/spo_plus_linear.yaml"):
             .reshape(1, num_assets, input_dim)
             .to(device)
         )
-
+        if cfg["portfolio"]["type"] == "markowitz":
+            # 重新获取一次训练集数据用于计算统计量
+            df_train_features, df_train_labels = build_dataset(
+                tickers=cfg["data"]["etfs"],
+                data_dir=cfg["data"]["root"],
+                start_date=str_train_start,
+                end_date=str_train_end,
+                feature_list=feature_names,
+            )
+            # 计算协方差 (Pandas 计算的是样本协方差)
+            # df_train_labels 是日收益率
+            cov_matrix = df_train_labels.cov().values
+        else:
+            cov_matrix = None
         # === 【修改 2】推断逻辑分支 ===
         with torch.no_grad():
             model_out = model(x_input)
@@ -230,9 +241,20 @@ def rolling_backtest(config_path: str = "configs/spo_plus_linear.yaml"):
                 # Softmax: 输出直接是权重
                 w_opt = model_out[0].cpu().numpy()
             else:
-                # SPO+: 输出是预测收益 -> 转成本 -> 求解
-                pred_cost = -model_out
-                w_opt, _ = portfolio_model.solve(pred_cost[0].cpu().numpy())
+                # Linear 模式 (SPO+ / MSE / Markowitz)
+
+                # === 【修改重点】先提取出第0个样本，确保它是 1D 向量 ===
+                # detach().cpu().numpy() 确保它变成一个纯 Numpy 数组
+                pred_return_1d = model_out[0].detach().cpu().numpy()
+
+                if cfg["portfolio"]["type"] == "markowitz":
+                    # Markowitz: 传入正的收益率向量 (1D Numpy Array)
+                    w_opt, _ = portfolio_model.solve(pred_return_1d, cov_matrix)
+                else:
+                    # Basic / SPO+: 传入预测成本 (负收益)
+                    # 注意：为了兼容旧代码，如果你那里旧代码是用 Tensor 操作的，也可以这样写：
+                    pred_cost = -pred_return_1d
+                    w_opt, _ = portfolio_model.solve(pred_cost)
 
         period_df = pd.DataFrame(
             {"daily_return": df_labels.values @ w_opt}, index=df_labels.index
@@ -298,4 +320,7 @@ if __name__ == "__main__":
     # rolling_backtest("configs/spo_plus_linear.yaml")
 
     # Linear Softmax
-    rolling_backtest("configs/softmax_linear.yaml")
+    # rolling_backtest("configs/softmax_linear.yaml")
+
+    # MSE Linear(Baseline)
+    rolling_backtest("configs/mse_linear.yaml")

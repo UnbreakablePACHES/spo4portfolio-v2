@@ -1,0 +1,58 @@
+experiment:
+  name: "LinearSPO+"
+  seed: 123
+
+data:
+  root: "data/FeatureData"    
+  etfs: ["EEM","EFA","JPXN","SPY","XLK",'VTI','AGG','DBC']  
+  label_window: 21        # 预测未来1天的收益率 
+  features:
+    - log_return_input
+    - SMA_10
+    - price_bias
+    - RSI_14
+    - MACD_diff
+    - bollinger_width
+    - volume_bias
+
+dataloader:
+  type: "monthly_window"
+  params:
+    batch_size: 63
+    shuffle: true
+    window: 21
+
+model:
+  type: "linear"
+  params:
+    input_dim: 7          # 特征数量
+
+portfolio:
+  type: "markowitz"
+  params:
+    budget: 1.0
+    lb: 0.0
+    ub: 0.3
+
+loss:
+  type: "mse"
+
+optimizer:
+  type: "adam"
+  params:
+    lr: 0.001
+    weight_decay: 0.0
+
+trainer:
+  epochs: 30
+  device: "cpu"   
+
+backtest:
+  enable: true                 # 是否开启回测模式
+  test_start: "2016-01-01"     # 回测起始日期（第一个调仓日）
+  test_end: "2024-12-31"       # 回测结束日期
+  
+  train_window_size: 12        # 训练窗口长度（单位：月），例如用过去 12 个月训练
+  rebalance_freq: "MS"         # 调仓频率，"MS" = Month Start (月初)
+  
+  initial_capital: 1.0         # 初始资金（用于计算净值曲线）

@@ -1,5 +1,6 @@
 from .PortfolioModel import PortfolioModel
 from .PortfolioModelWithFee import PortfolioModelWithFee
+from .MarkowitzModel import MarkowitzModel
 
 
 def build_portfolio_model(cfg):
@@ -28,6 +29,15 @@ def build_portfolio_model(cfg):
             n_assets=real_num_assets,
             gamma=params.get("gamma", 0.003),
             budget=params.get("budget", 1.0),
+        )
+    # === Markowitz Model ===
+    if ptype == "markowitz":
+        return MarkowitzModel(
+            n_assets=real_num_assets,
+            risk_factor=params.get("risk_factor", 100),
+            budget=params.get("budget", 1.0),
+            lb=params.get("lb", 0.0),
+            ub=params.get("ub", 1.0),
         )
 
     else:
