@@ -3,8 +3,16 @@ from .PortfolioModelWithFee import PortfolioModelWithFee
 
 
 def build_portfolio_model(cfg):
-    """
-    根据 config["portfolio"] 构建组合优化模型
+    """Instantiate a portfolio optimization model from configuration.
+
+    Args:
+        cfg: Configuration dictionary containing portfolio settings.
+
+    Returns:
+        PortfolioModel or PortfolioModelWithFee depending on configuration.
+
+    Raises:
+        ValueError: If an unknown portfolio type is provided.
     """
     pcfg = cfg["portfolio"]
     ptype = pcfg["type"]
