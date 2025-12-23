@@ -40,11 +40,13 @@ def build_dataloader(cfg):
         dataset = PortfolioDataset(
             features_df=features_df, labels_df=labels_df, num_assets=num_assets
         )
+
         def collate_fn(batch):
             xs, ys = zip(*batch)
             xs = torch.stack(xs)  # (B, N, F)
             ys = torch.stack(ys)  # (B, N)
             return {"features": xs, "cost": ys}
+
         return DataLoader(
             dataset,
             batch_size=params.get("batch_size", 1),
