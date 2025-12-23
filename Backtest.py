@@ -1,32 +1,38 @@
-import torch
-import yaml
 import os
+from datetime import datetime, timedelta
+
 import numpy as np
 import pandas as pd
-from datetime import datetime, timedelta
+import torch
+import yaml
 from dateutil.relativedelta import relativedelta
 
-# --- 引入组件 ---
-from DataPipeline.factory import build_dataloader
 from DataPipeline.DataBuilder import build_dataset
-from models.factory import build_model
-from portfolio.factory import build_portfolio_model
+from DataPipeline.factory import build_dataloader
 from losses.factory import build_loss
+from models.factory import build_model
 from optimizers.factory import build_optimizer
-from utils.logging import Logger, log_experiment_setup, log_training_epoch
-from utils.plotting import plot_backtest_results
+from portfolio.factory import build_portfolio_model
 from utils.analysis import (
+    calculate_performance_metrics,
+    calculate_turnover,
     extract_linear_importance,
     plot_feature_importance_heatmap,
-    calculate_turnover,
-    plot_weights_area,
     plot_turnover,
-    calculate_performance_metrics,
+    plot_weights_area,
 )
+from utils.logging import Logger, log_experiment_setup, log_training_epoch
+from utils.plotting import plot_backtest_results
 from utils.tuner import run_optuna_tuning
 
 
-def set_seed(seed):
+def set_seed(seed: int) -> None:
+    """Seed Python, NumPy, and PyTorch for reproducibility.
+
+    Args:
+        seed: Integer seed shared across random libraries.
+    """
+
     import random
 
     random.seed(seed)
@@ -36,8 +42,17 @@ def set_seed(seed):
         torch.cuda.manual_seed_all(seed)
 
 
-def rolling_backtest(config_path: str = "configs/spo_plus_linear.yaml"):
-    # 1. 加载 Config
+def rolling_backtest(config_path: str = "configs/spo_plus_linear.yaml") -> None:
+    """Run a rolling-window backtest based on the provided YAML config.
+
+    Args:
+        config_path: Path to the configuration file containing data, model, and
+            training settings.
+
+    Raises:
+        ValueError: If the configuration file lacks a ``backtest`` section.
+    """
+
     with open(config_path, "r", encoding="utf-8") as f:
         cfg = yaml.safe_load(f)
 
@@ -46,7 +61,6 @@ def rolling_backtest(config_path: str = "configs/spo_plus_linear.yaml"):
 
     bt_cfg = cfg["backtest"]
 
-    # 区分实验名称
     model_type = cfg["model"]["type"]
     exp_name = cfg["experiment"]["name"] + f"_{model_type}_rolling"
     timestamp = datetime.now().strftime("%Y%m%d_%H%M")
@@ -63,7 +77,6 @@ def rolling_backtest(config_path: str = "configs/spo_plus_linear.yaml"):
 
     device = torch.device(cfg["trainer"].get("device", "cpu"))
 
-    # 2. 解析时间轴
     start_test_date = pd.Timestamp(bt_cfg["test_start"])
     end_test_date = pd.Timestamp(bt_cfg["test_end"])
     freq = bt_cfg.get("rebalance_freq", "MS")
@@ -76,7 +89,6 @@ def rolling_backtest(config_path: str = "configs/spo_plus_linear.yaml"):
     all_returns_dfs = []
     feature_importance_history = []
 
-    # 3. 滚动循环
     for i, current_date in enumerate(rebalance_dates):
         train_end_dt = current_date - timedelta(days=1)
         train_start_dt = (
@@ -96,17 +108,9 @@ def rolling_backtest(config_path: str = "configs/spo_plus_linear.yaml"):
         logger.log(f"\n>>> Rebalance Date: {str_test_start}")
         logger.log(f"    Train Window: {str_train_start} -> {str_train_end}")
 
-        # 设置基础时间
         cfg["data"]["train_start"] = str_train_start
         cfg["data"]["train_end"] = str_train_end
-
-        # 强制更新 num_assets
         cfg["model"]["params"]["num_assets"] = len(cfg["data"]["etfs"])
-
-        # =============================================================
-        # === Optuna 调参 (Softmax 模式下也同样适用) ===
-        # =============================================================
-        # 如果你想跳过调参加速，可以在这里加个 if 判断
         best_params = run_optuna_tuning(
             base_cfg=cfg,
             train_start_str=str_train_start,
@@ -119,9 +123,6 @@ def rolling_backtest(config_path: str = "configs/spo_plus_linear.yaml"):
         cfg["optimizer"]["params"]["lr"] = best_params["lr"]
         cfg["trainer"]["epochs"] = best_params["epochs"]
 
-        # =============================================================
-        # === 正式训练 ===
-        # =============================================================
         set_seed(cfg["experiment"]["seed"])
 
         try:
@@ -132,9 +133,7 @@ def rolling_backtest(config_path: str = "configs/spo_plus_linear.yaml"):
 
         model = build_model(cfg).to(device)
         portfolio_model = build_portfolio_model(cfg)
-        loss_fn = build_loss(
-            cfg, portfolio_model
-        )  # 这里 Factory 会根据 loss type 自动返回正确的 loss
+        loss_fn = build_loss(cfg, portfolio_model)
         optimizer = build_optimizer(cfg, model)
 
         model.train()
@@ -146,18 +145,14 @@ def rolling_backtest(config_path: str = "configs/spo_plus_linear.yaml"):
 
             for batch in train_loader:
                 features = batch["features"].to(device)
-                c_true_input = batch["cost"].to(device)  # 这是一个负数 (Cost)
+                c_true_input = batch["cost"].to(device)
 
                 optimizer.zero_grad()
 
-                # === 【修改 1】训练逻辑分支 ===
                 if model_type == "softmax":
-                    # Softmax 输出直接就是权重 weights
                     weights = model(features)
-                    # Loss = mean(weights * cost) -> minimize cost
                     loss = loss_fn(weights, c_true_input)
                 else:
-                    # Linear 输出预测收益，取负变为预测成本
                     pred_return = model(features)
                     pred_cost = -pred_return
                     loss = loss_fn(pred_cost, c_true_input)
@@ -170,16 +165,10 @@ def rolling_backtest(config_path: str = "configs/spo_plus_linear.yaml"):
 
             avg_loss = epoch_loss_sum / batch_count if batch_count > 0 else 0.0
 
-            # 简化日志，只打印最后一次的
             if epoch == total_epochs:
                 logger.log(f"    [Train] Epoch {epoch}: Loss={avg_loss:.6f}")
-
-        # =============================================================
-        # === Inference (推断) ===
-        # =============================================================
         model.eval()
 
-        # 只有线性模型才提取特征重要度
         if hasattr(model, "linear") and model_type == "linear":
             imp_dict = extract_linear_importance(
                 model, feature_names, len(cfg["data"]["etfs"])
@@ -208,15 +197,12 @@ def rolling_backtest(config_path: str = "configs/spo_plus_linear.yaml"):
             .to(device)
         )
 
-        # === 【修改 2】推断逻辑分支 ===
         with torch.no_grad():
             model_out = model(x_input)
 
             if model_type == "softmax":
-                # Softmax: 输出直接是权重
                 w_opt = model_out[0].cpu().numpy()
             else:
-                # SPO+: 输出是预测收益 -> 转成本 -> 求解
                 pred_cost = -model_out
                 w_opt, _ = portfolio_model.solve(pred_cost[0].cpu().numpy())
 
@@ -232,7 +218,6 @@ def rolling_backtest(config_path: str = "configs/spo_plus_linear.yaml"):
 
         logger.log(f"    Weights: {np.round(w_opt, 3)}")
 
-    # 4. 结果汇总与画图
     if all_returns_dfs:
         full_perf_df = pd.concat(all_returns_dfs)
         full_perf_df.index.name = "Date"
@@ -249,7 +234,6 @@ def rolling_backtest(config_path: str = "configs/spo_plus_linear.yaml"):
         logger.log("Generating plots using utils.plotting...")
         plot_backtest_results(full_perf_df, save_dir)
 
-        # 计算指标
         metrics = calculate_performance_metrics(full_perf_df, save_dir)
         logger.log("-" * 30)
         logger.log(">>> Final Performance Metrics:")
@@ -259,11 +243,9 @@ def rolling_backtest(config_path: str = "configs/spo_plus_linear.yaml"):
         logger.log(f"    Max Drawdown:      {metrics['Max Drawdown']:.2%}")
         logger.log("-" * 30)
 
-    # 特征重要度 (仅 Linear)
     if feature_importance_history:
         plot_feature_importance_heatmap(feature_importance_history, save_dir)
 
-    # 权重和换手率
     if all_weights:
         weights_df = pd.DataFrame(all_weights).set_index("Date")
         weights_df.index = pd.to_datetime(weights_df.index)
@@ -280,8 +262,6 @@ def rolling_backtest(config_path: str = "configs/spo_plus_linear.yaml"):
 
 
 if __name__ == "__main__":
-    # Linear SPO+
+    # Example entry points
     # rolling_backtest("configs/spo_plus_linear.yaml")
-
-    # Linear Softmax
     rolling_backtest("configs/softmax_linear.yaml")

@@ -5,15 +5,25 @@ from .Dataloader import PortfolioDataset
 
 
 def build_dataloader(cfg):
+    """Build a ``DataLoader`` according to configuration settings.
+
+    Args:
+        cfg: Experiment configuration dictionary containing ``data`` and
+            ``dataloader`` fields.
+
+    Returns:
+        torch.utils.data.DataLoader configured for portfolio data.
+
+    Raises:
+        ValueError: If an unknown dataloader type is requested.
+    """
+
     dcfg = cfg["dataloader"]
     dtype = dcfg["type"]
     params = dcfg["params"]
 
     if dtype == "monthly_window":
         target_features = cfg["data"].get("features", None)
-
-        # === 【新增】读取 label_window 参数 ===
-        # 如果 config 里没写，默认就是 1 (保持原样)
         label_win = cfg["data"].get("label_window", 1)
 
         features_df, labels_df = build_dataset(
@@ -27,20 +37,14 @@ def build_dataloader(cfg):
         )
 
         num_assets = len(cfg["data"]["etfs"])
-
-        # ② 构造 Dataset（使用 Dataloader.py 中的 PortfolioDataset）
         dataset = PortfolioDataset(
             features_df=features_df, labels_df=labels_df, num_assets=num_assets
         )
-
-        # ③ collate_fn：把返回的 (x,y) 封装成 dict
         def collate_fn(batch):
             xs, ys = zip(*batch)
             xs = torch.stack(xs)  # (B, N, F)
             ys = torch.stack(ys)  # (B, N)
             return {"features": xs, "cost": ys}
-
-        # ④ 返回 PyTorch DataLoader
         return DataLoader(
             dataset,
             batch_size=params.get("batch_size", 1),

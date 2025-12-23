@@ -4,24 +4,21 @@ from pyepo.model.grb.grbmodel import optGrbModel
 
 class PortfolioModel(optGrbModel):
     def __init__(self, n_assets, budget=1.0, lb=0.0, ub=1.0, threads=None):
-        """
+        """Create a basic long-only portfolio optimization model.
+
         Args:
-            n_assets: 资产数量
-            budget: 总预算
-            lb: 单个资产权重下限 (默认为 0.0)
-            ub: 单个资产权重上限 (默认为 1.0)
-            threads: Gurobi 线程数 (可选)
+            n_assets: Number of assets in the universe.
+            budget: Total allocation budget constraint.
+            lb: Lower bound per-asset weight.
+            ub: Upper bound per-asset weight.
+            threads: Optional thread count for Gurobi.
         """
         self.n_assets = n_assets
 
-        # =========================================================
-        # === 【修复】处理 None 值，防止 Gurobi 报错 ===
-        # =========================================================
         if lb is None:
             lb = 0.0
         if ub is None:
             ub = 1.0
-        # =========================================================
 
         m = gp.Model()
         m.setParam("OutputFlag", 0)
@@ -50,9 +47,15 @@ class PortfolioModel(optGrbModel):
             self.x[i].setAttr("obj", float(c))
 
     def solve(self, cost_vec=None):
-        """
-        cost_vec=None → SPOPlus 内部调用
-        cost_vec=向量 → 用户调用（如求 true_sol）
+        """Optimize the portfolio for the provided cost vector.
+
+        Args:
+            cost_vec: Optional cost vector to set before solving. When ``None``
+                the existing objective is used (useful for SPO+ calls).
+
+        Returns:
+            Tuple of ``(solution, objective_value)`` where solution is a list of
+            asset weights.
         """
         if cost_vec is not None:
             self.setObj(cost_vec)

@@ -3,57 +3,56 @@ import torch.nn as nn
 
 
 class SoftmaxAllocator(nn.Module):
-    def __init__(self, num_assets, input_dim, hidden_layers=[], dropout_rate=0.0):
-        """
+    """Deep network that outputs portfolio weights via softmax."""
+
+    def __init__(self, num_assets, input_dim, hidden_layers=None, dropout_rate=0.0):
+        """Create the allocator network.
+
         Args:
-            num_assets: 资产数量 (8)
-            input_dim: 每个资产的特征数量 (7)
-            hidden_layers: list, 例如 [64] 或 [64, 32]。如果是 [] 则为纯线性.
-            dropout_rate: 防止过拟合，通常 0.2 ~ 0.5
+            num_assets: Number of tradable assets.
+            input_dim: Number of features per asset.
+            hidden_layers: Optional list of hidden layer widths. Empty or
+                ``None`` keeps the model linear.
+            dropout_rate: Dropout rate applied after each hidden layer.
         """
         super().__init__()
 
+        hidden_layers = hidden_layers or []
         layers = []
-        # 输入维度 = 资产数量 * 特征数 (Flatten之后)
         current_dim = num_assets * input_dim
 
-        # ============================================================
-        # 【关键修复】第一层必须加 BatchNorm
-        # 金融特征(如收益率)数值很小，不加这个 DNN 根本训练不动
-        # ============================================================
         layers.append(nn.BatchNorm1d(current_dim))
 
-        # 构建隐藏层
         if hidden_layers:
             for h_dim in hidden_layers:
                 layers.append(nn.Linear(current_dim, h_dim))
-                layers.append(nn.ReLU())  # 激活函数
-                layers.append(nn.Dropout(p=dropout_rate))  # Dropout
+                layers.append(nn.ReLU())
+                layers.append(nn.Dropout(p=dropout_rate))
                 current_dim = h_dim
 
-        # 输出层 (Output Layer)
         layers.append(nn.Linear(current_dim, num_assets))
-        layers.append(nn.Softmax(dim=1))  # 保证 sum=1, >0
+        layers.append(nn.Softmax(dim=1))
 
         self.net = nn.Sequential(*layers)
         self.num_assets = num_assets
         self.input_dim = input_dim
 
     def forward(self, x):
-        """
-        x shape: (batch_size, num_assets, input_dim)
+        """Generate normalized weights from input features.
+
+        Args:
+            x: Tensor of shape ``(batch_size, num_assets, input_dim)``.
+
+        Returns:
+            Tensor of shape ``(batch_size, num_assets)`` representing portfolio
+            weights that sum to one.
         """
         batch_size = x.size(0)
-
-        # Flatten: (Batch, 8, 7) -> (Batch, 56)
         x_flat = x.reshape(batch_size, -1)
 
         weights = self.net(x_flat)
 
-        # ============================================================
-        # 【数值保护】防止极其罕见的 NaN 或纯 0 导致后续 Log 报错
-        # ============================================================
         weights = torch.nan_to_num(weights, nan=1.0 / self.num_assets)
-        weights = torch.clamp(weights, min=1e-8, max=1.0)  # 加上极小值防止 log(0)
+        weights = torch.clamp(weights, min=1e-8, max=1.0)
 
         return weights

@@ -2,10 +2,17 @@ import torch
 
 
 def build_optimizer(cfg, model):
-    """
-    根据 config 构建优化器。
-    cfg: dict
-    model: nn.Module
+    """Create an optimizer from configuration.
+
+    Args:
+        cfg: Configuration dictionary containing optimizer settings.
+        model: Model whose parameters will be optimized.
+
+    Returns:
+        torch.optim.Optimizer instance.
+
+    Raises:
+        ValueError: If the optimizer type is unknown.
     """
 
     ocfg = cfg["optimizer"]

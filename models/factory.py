@@ -4,11 +4,16 @@ from .SoftmaxAllocator import SoftmaxAllocator
 
 
 def build_model(cfg):
-    """根据配置构建模型
+    """Construct a model instance from configuration.
+
     Args:
-        cfg (dict): 配置字典，包含模型类型和参数
+        cfg: Configuration dictionary containing ``model`` and ``data`` keys.
+
     Returns:
-        nn.Module: 构建好的模型实例
+        nn.Module: Initialized model ready for training.
+
+    Raises:
+        ValueError: If the requested model type is unknown.
     """
     mcfg = cfg["model"]
     mtype = mcfg["type"]

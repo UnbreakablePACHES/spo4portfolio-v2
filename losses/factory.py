@@ -4,8 +4,18 @@ from .MarkowitzLoss import MaxReturnLoss, MaxSharpeLoss
 
 
 def build_loss(cfg, portfolio_model=None):
-    """
-    根据 config["loss"]["type"] 构建 loss
+    """Construct the loss function specified in configuration.
+
+    Args:
+        cfg: Configuration dictionary containing ``loss`` settings.
+        portfolio_model: Optional portfolio model required by some losses.
+
+    Returns:
+        Initialized loss module.
+
+    Raises:
+        ValueError: If the loss type is unsupported or missing dependencies.
+        NotImplementedError: For placeholder robust losses.
     """
     lcfg = cfg["loss"]
     ltype = lcfg["type"]
@@ -15,12 +25,10 @@ def build_loss(cfg, portfolio_model=None):
             raise ValueError("SPOPlusLoss requires a portfolio_model")
         return SPOPlusLoss(portfolio_model)
 
-    elif ltype == "softmax_spo":  # 新增这个分支
-        # 可以从 config 读取 temperature，默认为 1.0
+    elif ltype == "softmax_spo":
         temp = cfg["loss"].get("params", {}).get("temperature", 1.0)
         return SoftmaxSPOLoss(temperature=temp)
 
-    # 预留给未来的 robust 损失
     elif ltype == "robust_ro":
         raise NotImplementedError("RO loss not implemented yet")
 
