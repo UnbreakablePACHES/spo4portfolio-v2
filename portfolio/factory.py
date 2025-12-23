@@ -10,15 +10,13 @@ def build_portfolio_model(cfg):
     ptype = pcfg["type"]
     params = pcfg["params"]
 
-    # === 【关键修改】 ===
-    # 动态获取资产数量，不再使用 params["num_assets"]
-    # 这样你的 YAML 里写 4 还是 8 都不影响，代码会自动识别
+    # 动态获取资产数量
     real_num_assets = len(cfg["data"]["etfs"])
 
     # ========== 训练阶段：使用 SPO+ 的基本 PortfolioModel ==========
     if ptype == "basic":
         return PortfolioModel(
-            n_assets=real_num_assets,  # <--- 改这里，传入动态计算的值
+            n_assets=real_num_assets,
             budget=params.get("budget", 1.0),
             ub=params.get("ub", None),
             lb=params.get("lb", None),
@@ -27,7 +25,7 @@ def build_portfolio_model(cfg):
     # ========== 回测阶段：加交易费用的 PortfolioModel ==========
     elif ptype == "with_fee":
         return PortfolioModelWithFee(
-            n_assets=real_num_assets,  # <--- 改这里，传入动态计算的值
+            n_assets=real_num_assets,
             gamma=params.get("gamma", 0.003),
             budget=params.get("budget", 1.0),
         )
