@@ -10,12 +10,12 @@ A minimal research sandbox for stochastic programming on ETF portfolios. The cod
 - **optimizers/** and **utils/** handle training loops, logging, plotting, and Optuna tuning for rolling experiments.
 
 ## Getting started
-1. Install dependencies (Gurobi is required for SPO+):
+1. Install dependencies :
    ```bash
    pip install -r requirements.txt
    ```
 2. Inspect a config like `configs/spo_plus_linear.yaml` to set your data path, ETF tickers, and training window.
-3. Run a rolling backtest (defaults to the linear + SPO+ config):
+3. Run a rolling backtest :
    ```bash
    python - <<'PY'
    from Backtest import rolling_backtest
