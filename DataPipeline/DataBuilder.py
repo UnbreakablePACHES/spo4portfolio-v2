@@ -122,5 +122,3 @@ def build_dataset(
         merged_label = full_df[label_cols]
 
     return merged_feature, merged_label
-
-    return merged_feature, merged_label
