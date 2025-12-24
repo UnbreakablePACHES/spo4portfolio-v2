@@ -37,7 +37,8 @@ portfolio:
 loss:
   type: "robust_ro"
   params:
-    radius: 0.01
+    rho: 0.01      # per-asset relative error cap (||ζ||_∞)
+    gamma: 0.05    # total simultaneous deviation budget (||ζ||_1)
     num_samples: 4
 
 optimizer:

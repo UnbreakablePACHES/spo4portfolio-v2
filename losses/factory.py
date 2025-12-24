@@ -34,9 +34,10 @@ def build_loss(cfg, portfolio_model=None):
         if portfolio_model is None:
             raise ValueError("NaiveRobustSPOLoss requires a portfolio_model")
         params = lcfg.get("params", {})
-        radius = params.get("radius", 0.01)
+        rho = params.get("rho", params.get("radius", 0.01))
+        gamma = params.get("gamma", None)
         num_samples = params.get("num_samples", 4)
-        return NaiveRobustSPOLoss(portfolio_model, radius=radius, num_samples=num_samples)
+        return NaiveRobustSPOLoss(portfolio_model, rho=rho, gamma=gamma, num_samples=num_samples)
 
     elif ltype == "robust_topk":
         raise NotImplementedError("top-k loss not implemented yet")
