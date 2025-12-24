@@ -13,7 +13,7 @@ from models.factory import build_model
 from portfolio.factory import build_portfolio_model
 from losses.factory import build_loss
 from optimizers.factory import build_optimizer
-from utils.logging import Logger, log_experiment_setup, log_training_epoch
+from utils.logging import Logger, log_experiment_setup
 from utils.plotting import plot_backtest_results
 from utils.analysis import (
     extract_linear_importance,
@@ -222,16 +222,16 @@ def rolling_backtest(config_path: str = "configs/spo_plus_linear.yaml"):
             if model_type == "softmax":
                 w_opt = model_out[0].cpu().numpy()
             else:
-                pred_cost = -model_out
+                pred_return = model_out
                 # 检查是否是带手续费的模型 (有 optimize 方法)
                 if hasattr(portfolio_model, "optimize"):
                     # 新模型：必须传入 w_current
                     w_opt = portfolio_model.optimize(
-                        pred_cost[0].cpu().numpy(), w_current
+                        pred_return[0].cpu().numpy(), w_current
                     )
                 else:
                     # 旧模型：solve
-                    w_opt, _ = portfolio_model.solve(pred_cost[0].cpu().numpy())
+                    w_opt, _ = portfolio_model.solve(pred_return[0].cpu().numpy())
 
         period_df = pd.DataFrame(
             {"daily_return": df_labels.values @ w_opt}, index=df_labels.index
