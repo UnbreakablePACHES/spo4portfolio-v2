@@ -55,7 +55,7 @@ class PortfolioModelWithFee:
         transaction_cost = self.gamma * gp.quicksum(
             self.z[i] for i in range(self.n_assets)
         )
-        self._model.setObjective(expected_return - transaction_cost, gp.GRB.MAXIMIZE)
+        self._model.setObjective(expected_return + transaction_cost, gp.GRB.MAXIMIZE)
 
     def optimize(self, cost_vec, prev_weight):
         """Solve the optimization problem for the provided cost vector.

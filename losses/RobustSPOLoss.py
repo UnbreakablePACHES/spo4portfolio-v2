@@ -40,31 +40,44 @@ class NaiveRobustSPOLoss(torch.nn.Module):
         return sols, objs
 
     def forward(self, pred_cost, true_cost):
-        """Compute ``x^*_{RO}(ĉ) = argmin_{x∈X} max_{c∈U(ĉ)} c^T x`` and
-        approximate ``max_{c∈U(ĉ)} ĉ^T(x(ĉ) - x^*(ĉ))`` with samples.
-
-        We sample perturbations ``ζ`` satisfying ``||ζ||_∞ ≤ ρ`` (and ``||ζ||_1
-        ≤ Γ`` when provided), build perturbed costs ``ĉ ∘ (1 + ζ)``, and use
-        their oracle solutions inside the SPO+ surrogate before taking the
-        worst-case scenario loss.
+        """
+        修正后的逻辑：
+        计算 perturbed_pred 在真实环境 true_cost 下的 SPO+ Loss，
+        取所有采样中最差（最大）的那个 Loss 作为当前 batch 的 Loss。
         """
         scenario_losses = []
         for _ in range(self.num_samples):
-            noise = (torch.rand_like(true_cost) * 2 - 1) * self.rho
+            # 1. 生成扰动噪声
+            noise = (torch.rand_like(pred_cost) * 2 - 1) * self.rho
             if self.gamma is not None:
                 l1_norm = noise.abs().sum(dim=1, keepdim=True)
                 scale = torch.minimum(
-                    torch.tensor(1.0, device=true_cost.device),
+                    torch.tensor(1.0, device=pred_cost.device),
                     self.gamma / (l1_norm + 1e-12),
                 )
                 noise = noise * scale
 
-            perturbed_cost = (pred_cost * (1 + noise)).detach()
+            # 2. 扰动预测值 (假设不确定性在预测侧)
+            perturbed_pred_cost = pred_cost * (1 + noise)
 
-            true_sols, true_objs = self._solve_batch(perturbed_cost)
+            # 3. 关键修正：计算 Loss 必须基于 true_cost
+            # 注意：SPOPlus 的参数通常是 (pred, true, true_sol, true_obj)
+            # 我们需要计算的是：如果我预测了 perturbed_pred_cost，在面对 true_cost 时会有多大后悔？
+
+            # 为了计算 SPO+，我们需要真实成本下的最优解 (缓存以加速)
+            # 如果 SPOPlus 类内部没有缓存机制，这里需要手动解 true_cost
+            # 但通常 SPOPlus 的 forward 接收 true_sols 和 true_objs 是对应 true_cost 的
+
+            # 下面这一步是在解 true_cost 的最优解（Ground Truth 的最优解）
+            # 这部分通常在循环外做一次即可，因为 true_cost 在循环中是不变的！
+            # 但为了适配你的代码结构，我先写在循环里，优化时应移到循环外。
+            true_sols, true_objs = self._solve_batch(true_cost)
+
+            # 计算 perturbed_pred 和 true_cost 之间的损失
             scenario_loss = self.loss_fn(
-                pred_cost, perturbed_cost, true_sols, true_objs
+                perturbed_pred_cost, true_cost, true_sols, true_objs
             )
             scenario_losses.append(scenario_loss.mean())
 
+        # 取最差情况（Max Loss）进行优化
         return torch.stack(scenario_losses).max()
