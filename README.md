@@ -21,6 +21,13 @@ A minimal research sandbox for stochastic programming on ETF portfolios. The cod
    from Backtest import rolling_backtest
    rolling_backtest("configs/spo_plus_linear.yaml")
    PY
+
+   # For a naive robust SPO variant that samples perturbations around the
+   # ground-truth costs, switch to the robust config:
+   python - <<'PY'
+   from Backtest import rolling_backtest
+   rolling_backtest("configs/robust_spo_linear.yaml")
+   PY
    ```
 
 ## Configuration highlights

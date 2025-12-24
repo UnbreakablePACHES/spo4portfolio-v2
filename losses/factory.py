@@ -1,5 +1,6 @@
 from .SPOPlusLoss import SPOPlusLoss
 from .SoftmaxLoss import SoftmaxSPOLoss
+from .RobustSPOLoss import NaiveRobustSPOLoss
 from .MarkowitzLoss import MaxReturnLoss, MaxSharpeLoss
 
 
@@ -30,7 +31,12 @@ def build_loss(cfg, portfolio_model=None):
         return SoftmaxSPOLoss(temperature=temp)
 
     elif ltype == "robust_ro":
-        raise NotImplementedError("RO loss not implemented yet")
+        if portfolio_model is None:
+            raise ValueError("NaiveRobustSPOLoss requires a portfolio_model")
+        params = lcfg.get("params", {})
+        radius = params.get("radius", 0.01)
+        num_samples = params.get("num_samples", 4)
+        return NaiveRobustSPOLoss(portfolio_model, radius=radius, num_samples=num_samples)
 
     elif ltype == "robust_topk":
         raise NotImplementedError("top-k loss not implemented yet")
