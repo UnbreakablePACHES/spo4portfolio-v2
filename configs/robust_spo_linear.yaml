@@ -1,0 +1,62 @@
+experiment:
+  name: "LinearRobustSPO"
+  seed: 123
+
+data:
+  root: "data/FeatureData"
+  etfs: ["EEM","EFA","JPXN","SPY","XLK",'VTI','AGG','DBC']
+  label_window: 21
+  features:
+    - log_return_input
+    - SMA_10
+    - price_bias
+    - RSI_14
+    - MACD_diff
+    - bollinger_width
+    - volume_bias
+
+dataloader:
+  type: "monthly_window"
+  params:
+    batch_size: 63
+    shuffle: true
+    window: 21
+
+model:
+  type: "linear"
+  params:
+    input_dim: 7
+
+portfolio:
+  type: "basic"
+  params:
+    budget: 1.0
+    lb: 0.0
+    ub: 1.0
+
+loss:
+  type: "robust_ro"
+  params:
+    rho: 0.01      # per-asset relative error cap (||ζ||_∞)
+    gamma: 0.05    # total simultaneous deviation budget (||ζ||_1)
+    num_samples: 4
+
+optimizer:
+  type: "adam"
+  params:
+    lr: 0.001
+    weight_decay: 0.0
+
+trainer:
+  epochs: 30
+  device: "cpu"
+
+backtest:
+  enable: true
+  test_start: "2016-01-01"
+  test_end: "2024-12-31"
+
+  train_window_size: 12
+  rebalance_freq: "MS"
+
+  initial_capital: 1.0

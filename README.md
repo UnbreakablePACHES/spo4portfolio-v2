@@ -21,7 +21,19 @@ A minimal research sandbox for stochastic programming on ETF portfolios. The cod
    from Backtest import rolling_backtest
    rolling_backtest("configs/spo_plus_linear.yaml")
    PY
-   ```
+
+  # For a robust SPO variant that samples perturbations around the
+  # ground-truth costs under an uncertainty set U(ĉ), switch to the robust config:
+  python - <<'PY'
+  from Backtest import rolling_backtest
+  rolling_backtest("configs/robust_spo_linear.yaml")
+  PY
+  ```
+
+The robust loss uses the uncertainty set ``U(ĉ) = {ĉ ∘ (1 + ζ): ||ζ||_∞ ≤ ρ, ||ζ||_1 ≤ Γ}``,
+where ``ρ`` bounds the per-asset relative error and ``Γ`` caps the total simultaneous
+deviation across assets. The robust oracle solves ``x^*_{RO}(ĉ) = argmin_{x∈X} max_{c∈U(ĉ)} c^T x``
+and the Monte Carlo loss approximates ``max_{c∈U(ĉ)} ĉ^T(x(ĉ) - x^*(ĉ))`` with sampled perturbations.
 
 ## Configuration highlights
 - `data`: root folder for features, tickers list, and feature names used for both models.
