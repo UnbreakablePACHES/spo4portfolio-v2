@@ -157,11 +157,16 @@ def rolling_backtest(config_path: str = "configs/spo_plus_linear.yaml"):
                     weights = model(features)
                     loss = loss_fn(weights, c_true_input)
                 else:
-                    # Linear
+                    # Backtest.py 或训练循环中
+                    # 1. 模型预测出的是收益率 (Positive)
                     pred_return = model(features)
-                    # Loss 需要预测成本 (-pred_return)
-                    # 并传入 prev_weights (如果是 None，SPOPlusLoss 会自动处理为无手续费模式)
-                    loss = loss_fn(-pred_return, c_true_input, prev_weights=w_prev)
+
+                    # 2. 【关键】传给 Loss 时一定要取反！
+                    # 让 SPO+ 以为这是 Cost，它就会努力去“降低”这个负数（即提高正收益）
+                    pred_cost = -pred_return
+                    true_cost = -c_true_input  # 真实标签也要取反
+
+                    loss = loss_fn(pred_cost, true_cost, prev_weights=w_prev)
 
                 loss.backward()
                 optimizer.step()

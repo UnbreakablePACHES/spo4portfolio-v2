@@ -74,7 +74,7 @@ class PortfolioModelWithFee(optGrbModel):
             )
 
         # Maximize (Return - Costs)
-        self._model.setObjective(expected_return - l1_cost - l2_cost, gp.GRB.MAXIMIZE)
+        self._model.setObjective(-expected_return - l1_cost - l2_cost, gp.GRB.MAXIMIZE)
 
     def optimize(self, cost_vec, prev_weight):
         self.setObj(cost_vec, prev_weight)
