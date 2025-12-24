@@ -37,7 +37,9 @@ def build_loss(cfg, portfolio_model=None):
         rho = params.get("rho", params.get("radius", 0.01))
         gamma = params.get("gamma", None)
         num_samples = params.get("num_samples", 4)
-        return NaiveRobustSPOLoss(portfolio_model, rho=rho, gamma=gamma, num_samples=num_samples)
+        return NaiveRobustSPOLoss(
+            portfolio_model, rho=rho, gamma=gamma, num_samples=num_samples
+        )
 
     elif ltype == "robust_topk":
         raise NotImplementedError("top-k loss not implemented yet")

@@ -59,7 +59,7 @@ class NaiveRobustSPOLoss(torch.nn.Module):
                 )
                 noise = noise * scale
 
-            perturbed_cost = (true_cost * (1 + noise)).detach()
+            perturbed_cost = (pred_cost * (1 + noise)).detach()
 
             true_sols, true_objs = self._solve_batch(perturbed_cost)
             scenario_loss = self.loss_fn(

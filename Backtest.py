@@ -262,6 +262,4 @@ def rolling_backtest(config_path: str = "configs/spo_plus_linear.yaml") -> None:
 
 
 if __name__ == "__main__":
-    # Example entry points
-    # rolling_backtest("configs/spo_plus_linear.yaml")
-    rolling_backtest("configs/softmax_linear.yaml")
+    rolling_backtest("configs/robust_spo_linear.yaml")
