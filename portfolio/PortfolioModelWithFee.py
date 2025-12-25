@@ -74,7 +74,7 @@ class PortfolioModelWithFee(optGrbModel):
             )
 
         # Maximize (Return - Costs)
-        self._model.setObjective(-expected_return - l1_cost - l2_cost, gp.GRB.MAXIMIZE)
+        self._model.setObjective(expected_return - l1_cost - l2_cost, gp.GRB.MAXIMIZE)
 
     def optimize(self, cost_vec, prev_weight):
         self.setObj(cost_vec, prev_weight)
@@ -90,3 +90,38 @@ class PortfolioModelWithFee(optGrbModel):
             )
 
         return sol
+
+    def solve(self, cost_vec):
+        """
+        SPO+ 训练专用的求解接口。
+
+        Args:
+            cost_vec (np.array): 预测的成本向量 (即 -Return)
+
+        Returns:
+            sol (list): 最优权重 x
+            obj (float): 最优目标值 (注意：必须返回 Cost 视角的值)
+        """
+        # 1. 训练时通常假设无历史持仓 (prev_weight=None/Zero)，或者由 Batch 数据决定
+        # 注意：标准 SPO+ 接口通常只传 cost_vec。
+        # 如果你的 SPOPlusLoss 没改过，它不会传 prev_weight，这里默认用 0
+        dummy_prev_weight = np.zeros(self.n_assets)
+
+        # 2. 调用我们写好的 setObj (它会把 Cost 翻转回 Return 并 Maximize)
+        self.setObj(cost_vec, dummy_prev_weight)
+
+        self._model.optimize()
+
+        if self._model.Status == gp.GRB.OPTIMAL:
+            sol = [self.x[i].X for i in range(self.n_assets)]
+            # 3. 【最关键的一步】
+            # Gurobi 算出来的是 Max Return (例如 0.05)
+            # SPO+ 需要的是 Min Cost (例如 -0.05)
+            # 所以必须取反返回！
+            obj = -self._model.ObjVal
+        else:
+            sol = [1.0 / self.n_assets] * self.n_assets
+            # 如果求解失败，返回一个惩罚性的 Cost (比如 0 或正数)
+            obj = 0.0
+
+        return sol, obj
