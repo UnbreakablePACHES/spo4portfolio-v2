@@ -21,8 +21,3 @@ A minimal research sandbox for stochastic programming on ETF portfolios. The cod
    rolling_backtest("configs/spo_plus_linear.yaml")
    ```
 
-## Configuration highlights
-- `data`: root folder for features, tickers list, and feature names used for both models.
-- `model`: choose `linear` (predict returns, optimized via SPO+) or `softmax` (direct weight allocation with hidden layers/dropout options).
-- `loss`: select `spo_plus`, `softmax_spo`, `max_return`, or `max_sharpe` depending on whether you train a predictor or allocator.
-- `backtest`: control the rolling window size, rebalance frequency (e.g., month start), and initial capital for the performance trace.
