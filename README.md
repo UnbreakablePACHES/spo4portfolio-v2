@@ -1,23 +1,31 @@
 # SPO4Portfolio
 
-A minimal research sandbox for stochastic programming on ETF portfolios. The codebase wires up data fetching, model training, and backtesting so you can compare prediction-driven and allocation-driven workflows without extra scaffolding.
+Research sandbox for ETF portfolio backtesting with rolling retraining.
 
-## Project layout
-- **DataPipeline/** builds training samples from OHLCV features and wraps them in PyTorch dataloaders (`monthly_window`).
-- **models/** exposes a linear forecaster and a softmax allocator selected through `model.type` in the config.
-- **portfolio/** defines the optimization layer used by SPO+ losses.
-- **losses/** includes SPO+, a softmax-friendly SPO surrogate, plus return- and Sharpe-focused objectives.
-- **optimizers/** and **utils/** handle training loops, logging, plotting, and Optuna tuning for rolling experiments.
+## Structure
+- `Backtest.py`: main rolling backtest entry.
+- `configs/`: experiment settings.
+- `DataPipeline/`: dataset and dataloader building.
+- `models/`: prediction/allocation models.
+- `losses/`: training objectives.
+- `portfolio/`: portfolio optimization layer.
+- `optimizers/`: optimizer factory.
+- `utils/`: logging, metrics, plotting, tuning.
 
-## Getting started
-1. Install dependencies :
+## Quick start
+1. Install:
    ```bash
    pip install -r requirements.txt
    ```
-2. Inspect a config like `configs/spo_plus_linear.yaml` to set your data path, ETF tickers, and training window.
-3. Run a rolling backtest :
-   ```bash
+2. Check config (`configs/spo_plus_linear.yaml` or `configs/softmax_linear.yaml`).
+3. Run:
+   ```python
    from Backtest import rolling_backtest
    rolling_backtest("configs/spo_plus_linear.yaml")
    ```
 
+## Outputs
+Saved under `outputs/<exp_name_timestamp>/`:
+- `rolling_performance.csv`
+- `rolling_weights.csv`
+- plots and logs
